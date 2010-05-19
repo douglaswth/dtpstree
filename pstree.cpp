@@ -178,7 +178,8 @@ int main(int argc, char *argv[])
 	PidMap pids;
 
 	_forall (InfoProc, proc, procs, procs + count)
-		pids[proc->ki_pid] = new Proc(kd, proc);
+		if (proc->ki_ppid != 0 || proc->ki_pid == 1)
+			pids[proc->ki_pid] = new Proc(kd, proc);
 
 	Sort sort(Name);
 
