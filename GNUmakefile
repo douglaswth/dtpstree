@@ -1,3 +1,4 @@
+CXXFLAGS := -pedantic -Wall
 LDFLAGS := -lkvm
 
 all: pstree
