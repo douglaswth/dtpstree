@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <kvm.h>
 #include <paths.h>
+#include <popt.h>
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -163,6 +164,32 @@ typedef kinfo_proc *InfoProc;
 
 int main(int argc, char *argv[])
 {
+	poptOption options[] = {
+		{ "arguments", 'a', POPT_ARG_NONE, NULL, 0, "show command line arguments", NULL },
+		{ "ascii", 'A', POPT_ARG_NONE, NULL, 0, "use ASCII line drawing characters", NULL },
+		{ "compact", 'c', POPT_ARG_NONE, NULL, 0, "don't compact identical subtrees", NULL },
+		{ "highlight-all", 'h', POPT_ARG_NONE, NULL, 0, "highlight current process and its ancestors", NULL },
+		{ "highlight-pid", 'H', POPT_ARG_INT, NULL, 0, "highlight this process and its ancestors", "PID" },
+		{ "vt100", 'G', POPT_ARG_NONE, NULL, 0, "use VT100 line drawing characters", NULL },
+		{ "long", 'l', POPT_ARG_NONE, NULL, 0, "don't truncate long lines", NULL },
+		{ "numeric-sort", 'n', POPT_ARG_NONE, NULL, 0, "sort output by PID", NULL },
+		{ "show-pids", 'p', POPT_ARG_NONE, NULL, 0, "show PIDs; implies -c", NULL },
+		{ "uid-changes", 'u', POPT_ARG_NONE, NULL, 0, "show uid transitions", NULL },
+		{ "unicode", 'U', POPT_ARG_NONE, NULL, 0, "use Unicode line drawing characters", NULL },
+		{ "version", 'V', POPT_ARG_NONE, NULL, 0, "display version information", NULL },
+		POPT_AUTOHELP
+		POPT_TABLEEND
+	};
+	poptContext context(poptGetContext(NULL, argc, const_cast<const char **>(argv), options, 0));
+
+	poptSetOtherOptionHelp(context, "[OPTION...] [PID|USER]");
+
+	std::cout << poptGetNextOpt(context) << std::endl;
+
+	poptFreeContext(context);
+
+	return 0;
+
 	char error[_POSIX2_LINE_MAX];
 	kvm_t *kd(kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, error));
 
