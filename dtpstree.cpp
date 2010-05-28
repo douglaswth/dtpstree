@@ -171,12 +171,15 @@ int main(int argc, char *argv[])
 		{ "highlight-all", 'h', POPT_ARG_NONE, NULL, 0, "highlight current process and its ancestors", NULL },
 		{ "highlight-pid", 'H', POPT_ARG_INT, NULL, 0, "highlight this process and its ancestors", "PID" },
 		{ "vt100", 'G', POPT_ARG_NONE, NULL, 0, "use VT100 line drawing characters", NULL },
+		{ "show-kernel", 'k', POPT_ARG_NONE, NULL, 0, "show kernel processes", NULL },
 		{ "long", 'l', POPT_ARG_NONE, NULL, 0, "don't truncate long lines", NULL },
 		{ "numeric-sort", 'n', POPT_ARG_NONE, NULL, 0, "sort output by PID", NULL },
 		{ "show-pids", 'p', POPT_ARG_NONE, NULL, 0, "show PIDs; implies -c", NULL },
 		{ "uid-changes", 'u', POPT_ARG_NONE, NULL, 0, "show uid transitions", NULL },
 		{ "unicode", 'U', POPT_ARG_NONE, NULL, 0, "use Unicode line drawing characters", NULL },
 		{ "version", 'V', POPT_ARG_NONE, NULL, 0, "display version information", NULL },
+		{ "pid", '\0', POPT_ARG_INT, NULL, 0, "start at this PID", "PID" },
+		{ "user", '\0', POPT_ARG_STRING, NULL, 0, "show only trees rooted at processes of this user", "USER" },
 		POPT_AUTOHELP
 		POPT_TABLEEND
 	};
