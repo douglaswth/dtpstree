@@ -15,6 +15,7 @@
 #include <err.h>
 #include <fcntl.h>
 #include <kvm.h>
+#include <libgen.h>
 #include <paths.h>
 #include <popt.h>
 #include <pwd.h>
@@ -24,12 +25,29 @@
 
 #include "foreach.hpp"
 
+#define DTPSTREE_PROGRAM "dtpstree"
+#define DTPSTREE_VERSION "1.0.1"
+
 class Proc;
 
 typedef std::map<pid_t, Proc *> PidMap;
 typedef std::multimap<std::string, Proc *> NameMap;
 
-enum Sort { Pid, Name };
+enum Flags
+{
+	None		= 0x000,
+	Arguments	= 0x001,
+	Ascii		= 0x002,
+	Compact		= 0x004,
+	Vt100		= 0x008,
+	ShowKernel	= 0x010,
+	Long		= 0x020,
+	NumericSort	= 0x040,
+	ShowPids	= 0x084,
+	UidChanges	= 0x100,
+	Unicode		= 0x200,
+	Version		= 0x400
+};
 
 class Proc
 {
@@ -164,20 +182,22 @@ typedef kinfo_proc *InfoProc;
 
 int main(int argc, char *argv[])
 {
+	int flags(0);
+	pid_t hpid(-2);
 	poptOption options[] = {
-		{ "arguments", 'a', POPT_ARG_NONE, NULL, 0, "show command line arguments", NULL },
-		{ "ascii", 'A', POPT_ARG_NONE, NULL, 0, "use ASCII line drawing characters", NULL },
-		{ "compact", 'c', POPT_ARG_NONE, NULL, 0, "don't compact identical subtrees", NULL },
-		{ "highlight-all", 'h', POPT_ARG_NONE, NULL, 0, "highlight current process and its ancestors", NULL },
-		{ "highlight-pid", 'H', POPT_ARG_INT, NULL, 0, "highlight this process and its ancestors", "PID" },
-		{ "vt100", 'G', POPT_ARG_NONE, NULL, 0, "use VT100 line drawing characters", NULL },
-		{ "show-kernel", 'k', POPT_ARG_NONE, NULL, 0, "show kernel processes", NULL },
-		{ "long", 'l', POPT_ARG_NONE, NULL, 0, "don't truncate long lines", NULL },
-		{ "numeric-sort", 'n', POPT_ARG_NONE, NULL, 0, "sort output by PID", NULL },
-		{ "show-pids", 'p', POPT_ARG_NONE, NULL, 0, "show PIDs; implies -c", NULL },
-		{ "uid-changes", 'u', POPT_ARG_NONE, NULL, 0, "show uid transitions", NULL },
-		{ "unicode", 'U', POPT_ARG_NONE, NULL, 0, "use Unicode line drawing characters", NULL },
-		{ "version", 'V', POPT_ARG_NONE, NULL, 0, "display version information", NULL },
+		{ "arguments", 'a', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Arguments, "show command line arguments", NULL },
+		{ "ascii", 'A', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Ascii, "use ASCII line drawing characters", NULL },
+		{ "compact", 'c', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Compact, "don't compact identical subtrees", NULL },
+		{ "highlight-all", 'h', POPT_ARG_VAL, &hpid, -1, "highlight current process and its ancestors", NULL },
+		{ "highlight-pid", 'H', POPT_ARG_INT, &hpid, 0, "highlight this process and its ancestors", "PID" },
+		{ "vt100", 'G', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Vt100, "use VT100 line drawing characters", NULL },
+		{ "show-kernel", 'k', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowKernel, "show kernel processes", NULL },
+		{ "long", 'l', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Long, "don't truncate long lines", NULL },
+		{ "numeric-sort", 'n', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, NumericSort, "sort output by PID", NULL },
+		{ "show-pids", 'p', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowPids, "show PIDs; implies -c", NULL },
+		{ "uid-changes", 'u', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, UidChanges, "show uid transitions", NULL },
+		{ "unicode", 'U', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Unicode, "use Unicode line drawing characters", NULL },
+		{ "version", 'V', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Version, "display version information", NULL },
 		{ "pid", '\0', POPT_ARG_INT, NULL, 0, "start at this PID", "PID" },
 		{ "user", '\0', POPT_ARG_STRING, NULL, 0, "show only trees rooted at processes of this user", "USER" },
 		POPT_AUTOHELP
@@ -187,11 +207,23 @@ int main(int argc, char *argv[])
 
 	poptSetOtherOptionHelp(context, "[OPTION...] [PID|USER]");
 
-	std::cout << poptGetNextOpt(context) << std::endl;
+	int count;
+
+	if ((count = poptGetNextOpt(context)) < -1)
+	{
+		std::cerr << basename(argv[0]) << ": " << poptStrerror(count) << ": " << poptBadOption(context, 0) << std::endl;
+
+		return 1;
+	}
 
 	poptFreeContext(context);
 
-	return 0;
+	if (flags & Version)
+	{
+		std::cout << DTPSTREE_PROGRAM " " DTPSTREE_VERSION << std::endl;
+
+		return 0;
+	}
 
 	char error[_POSIX2_LINE_MAX];
 	kvm_t *kd(kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, error));
@@ -199,7 +231,6 @@ int main(int argc, char *argv[])
 	if (!kd)
 		errx(1, "%s", error);
 
-	int count;
 	InfoProc procs(kvm_getprocs(kd, KERN_PROC_PROC, 0, &count));
 
 	if (!procs)
@@ -211,7 +242,7 @@ int main(int argc, char *argv[])
 		if (proc->ki_ppid != 0 || proc->ki_pid == 1)
 			pids[proc->ki_pid] = new Proc(kd, proc);
 
-	Sort sort(Name);
+	enum { Pid, Name } sort(flags & NumericSort ? Pid : Name);
 
 	_foreach (PidMap, pid, pids)
 	{
@@ -222,10 +253,9 @@ int main(int argc, char *argv[])
 			parent->second->child(proc);
 	}
 
-	if (true)
+	if (hpid != -2)
 	{
-		pid_t hpid(0);
-		PidMap::iterator pid(pids.find(hpid ? hpid : getpid()));
+		PidMap::iterator pid(pids.find(hpid != -1 ? hpid : getpid()));
 
 		if (pid != pids.end())
 			pid->second->highlight();
@@ -267,3 +297,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+// display a tree of processes
