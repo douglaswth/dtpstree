@@ -10,7 +10,7 @@ all: dtpstree
 man: man1/dtpstree.1
 
 man1/%.1: %
-	help2man -Nn '$(shell sed -e '$$ s/^# //p;d' $<)' -o $@ $(shell realpath $<)
+	help2man -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell realpath $<)
 
 clean:
 	rm -f dtpstree
