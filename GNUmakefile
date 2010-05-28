@@ -1,7 +1,9 @@
-CXXFLAGS := -pedantic -Wall
-LDFLAGS := -lkvm
+CPPFLAGS := -I/usr/local/include
+CXXFLAGS := -pedantic -Wall -O2 -Wno-long-long
+LDFLAGS := -L/usr/local/lib
+LDLIBS := -lkvm -lpopt
 
-all: pstree
+all: dtpstree
 
 clean:
-	rm -f pstree
+	rm -f dtpstree
