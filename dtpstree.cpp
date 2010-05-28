@@ -257,5 +257,13 @@ int main(int argc, char *argv[])
 		break;
 	}
 
+	std::setlocale(LC_ALL, "");
+
+	char line[MB_LEN_MAX];
+	int size(std::wctomb(line, L'└'));
+
+	if (size != -1)
+		std::cout << std::string(line, size) << std::endl;
+
 	return 0;
 }
