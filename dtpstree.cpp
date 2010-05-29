@@ -35,22 +35,26 @@ typedef std::multimap<std::string, Proc *> NameMap;
 
 enum Flags
 {
-	None		= 0x000,
-	Arguments	= 0x001,
-	Ascii		= 0x002,
-	Compact		= 0x004,
-	Vt100		= 0x008,
-	ShowKernel	= 0x010,
-	Long		= 0x020,
-	NumericSort	= 0x040,
-	ShowPids	= 0x084,
-	UidChanges	= 0x100,
-	Unicode		= 0x200,
-	Version		= 0x400
+	Arguments	= 0x0001,
+	Ascii		= 0x0002,
+	Compact		= 0x0004,
+	Highlight	= 0x0008,
+	Vt100		= 0x0010,
+	ShowKernel	= 0x0020,
+	Long		= 0x0040,
+	NumericSort	= 0x0080,
+	ShowPids	= 0x0104,
+	ShowTitles	= 0x0200,
+	UidChanges	= 0x0400,
+	Unicode		= 0x0800,
+	Version		= 0x1000,
+	Pid			= 0x2000,
+	User		= 0x4000
 };
 
 class Proc
 {
+	const int &flags_;
 	kvm_t *kd_;
 	kinfo_proc *proc_;
 	Proc *parent_;
@@ -59,8 +63,7 @@ class Proc
 	bool highlight_;
 
 public:
-	Proc() {}
-	Proc(kvm_t *kd, kinfo_proc *proc) : kd_(kd), proc_(proc) {}
+	Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc) {}
 
 	inline std::string name() const { return proc_->ki_comm; }
 	inline pid_t parent() const { return proc_->ki_ppid; }
@@ -110,8 +113,8 @@ private:
 
 		print << name();
 
-		bool _pid(true), _args(true);
-		bool change(true && parent_ && uid() != parent_->uid());
+		bool _pid(flags_ & ShowPids), _args(flags_ & Arguments);
+		bool change(flags_ & UidChanges && parent_ && uid() != parent_->uid());
 		bool parens((_pid || change) && !_args);
 
 		if (parens)
@@ -164,7 +167,7 @@ private:
 		if (argv && *argv)
 			for (++argv; *argv; ++argv)
 			{
-				if (true && (indent += 1 + std::strlen(*argv)) > 75)
+				if (!(flags_ & Long) && (indent += 1 + std::strlen(*argv)) > 75)
 				{
 					args << " ...";
 
@@ -178,45 +181,93 @@ private:
 	}
 };
 
-typedef kinfo_proc *InfoProc;
-
 int main(int argc, char *argv[])
 {
 	int flags(0);
-	pid_t hpid(-2);
-	poptOption options[] = {
-		{ "arguments", 'a', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Arguments, "show command line arguments", NULL },
-		{ "ascii", 'A', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Ascii, "use ASCII line drawing characters", NULL },
-		{ "compact", 'c', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Compact, "don't compact identical subtrees", NULL },
-		{ "highlight-all", 'h', POPT_ARG_VAL, &hpid, -1, "highlight current process and its ancestors", NULL },
-		{ "highlight-pid", 'H', POPT_ARG_INT, &hpid, 0, "highlight this process and its ancestors", "PID" },
-		{ "vt100", 'G', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Vt100, "use VT100 line drawing characters", NULL },
-		{ "show-kernel", 'k', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowKernel, "show kernel processes", NULL },
-		{ "long", 'l', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Long, "don't truncate long lines", NULL },
-		{ "numeric-sort", 'n', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, NumericSort, "sort output by PID", NULL },
-		{ "show-pids", 'p', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowPids, "show PIDs; implies -c", NULL },
-		{ "uid-changes", 'u', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, UidChanges, "show uid transitions", NULL },
-		{ "unicode", 'U', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Unicode, "use Unicode line drawing characters", NULL },
-		{ "version", 'V', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Version, "display version information", NULL },
-		{ "pid", '\0', POPT_ARG_INT, NULL, 0, "start at this PID", "PID" },
-		{ "user", '\0', POPT_ARG_STRING, NULL, 0, "show only trees rooted at processes of this user", "USER" },
-		POPT_AUTOHELP
-		POPT_TABLEEND
-	};
-	poptContext context(poptGetContext(NULL, argc, const_cast<const char **>(argv), options, 0));
+	pid_t hpid, pid;
+	char *user(NULL);
 
-	poptSetOtherOptionHelp(context, "[OPTION...] [PID|USER]");
-
-	int count;
-
-	if ((count = poptGetNextOpt(context)) < -1)
 	{
-		std::cerr << basename(argv[0]) << ": " << poptStrerror(count) << ": " << poptBadOption(context, 0) << std::endl;
+		poptOption options[] = {
+			{ "arguments", 'a', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Arguments, "show command line arguments", NULL },
+			{ "ascii", 'A', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Ascii, "use ASCII line drawing characters", NULL },
+			{ "compact", 'c', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Compact, "don't compact identical subtrees", NULL },
+			{ "highlight-all", 'h', POPT_ARG_NONE, NULL, 'h', "highlight current process and its ancestors", NULL },
+			{ "highlight-pid", 'H', POPT_ARG_INT, &hpid, 'H', "highlight this process and its ancestors", "PID" },
+			{ "vt100", 'G', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Vt100, "use VT100 line drawing characters", NULL },
+			{ "show-kernel", 'k', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowKernel, "show kernel processes", NULL },
+			{ "long", 'l', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Long, "don't truncate long lines", NULL },
+			{ "numeric-sort", 'n', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, NumericSort, "sort output by PID", NULL },
+			{ "show-pids", 'p', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowPids, "show PIDs; implies -c", NULL },
+			{ "show-titles", 't', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowTitles, "show process titles", NULL },
+			{ "uid-changes", 'u', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, UidChanges, "show uid transitions", NULL },
+			{ "unicode", 'U', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Unicode, "use Unicode line drawing characters", NULL },
+			{ "version", 'V', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Version, "display version information", NULL },
+			{ "pid", '\0', POPT_ARG_INT, &pid, 'p', "start at this PID", "PID" },
+			{ "user", '\0', POPT_ARG_STRING, &user, 'u', "show only trees rooted at processes of this user", "USER" },
+			POPT_AUTOHELP
+			POPT_TABLEEND
+		};
+		poptContext context(poptGetContext(NULL, argc, const_cast<const char **>(argv), options, 0));
+		int versionArgc;
+		const char **versionArgv;
 
-		return 1;
+		poptParseArgvString("-V", &versionArgc, &versionArgv);
+
+		poptAlias versionAlias = { NULL, 'v', versionArgc, versionArgv };
+
+		poptAddAlias(context, versionAlias, 0);
+		poptSetOtherOptionHelp(context, "[OPTION...] [PID|USER]");
+
+		int option;
+
+		while ((option = poptGetNextOpt(context)) >= 0)
+			switch (option)
+			{
+			case 'h':
+				hpid = getpid();
+			case 'H':
+				flags |= Highlight;
+
+				break;
+			case 'p':
+				flags |= Pid;
+				flags &= ~User;
+
+				break;
+			case 'u':
+				flags |= User;
+				flags &= ~Pid;
+			}
+
+		if (option != -1)
+			errx(1, "%s: %s", poptStrerror(option), poptBadOption(context, 0));
+
+		for (const char **arg(poptGetArgs(context)); arg && *arg; ++arg)
+		{
+			char *end;
+			long value(std::strtol(*arg, &end, 0));
+
+			if (*arg == end || *end != '\0')
+			{
+				std::free(user);
+
+				user = strdup(*arg);
+				flags |= User;
+				flags &= ~Pid;
+			}
+			else if (value > INT_MAX || value < INT_MIN)
+				errx(1, "%s: %s", poptStrerror(POPT_ERROR_OVERFLOW), *arg);
+			else
+			{
+				pid = value;
+				flags |= Pid;
+				flags &= ~User;
+			}
+		}
+
+		poptFreeContext(context);
 	}
-
-	poptFreeContext(context);
 
 	if (flags & Version)
 	{
@@ -231,6 +282,9 @@ int main(int argc, char *argv[])
 	if (!kd)
 		errx(1, "%s", error);
 
+	typedef kinfo_proc *InfoProc;
+
+	int count;
 	InfoProc procs(kvm_getprocs(kd, KERN_PROC_PROC, 0, &count));
 
 	if (!procs)
@@ -239,10 +293,10 @@ int main(int argc, char *argv[])
 	PidMap pids;
 
 	_forall (InfoProc, proc, procs, procs + count)
-		if (proc->ki_ppid != 0 || proc->ki_pid == 1)
-			pids[proc->ki_pid] = new Proc(kd, proc);
+		if (flags & ShowKernel || proc->ki_ppid != 0 || proc->ki_pid == 1)
+			pids[proc->ki_pid] = new Proc(flags, kd, proc);
 
-	enum { Pid, Name } sort(flags & NumericSort ? Pid : Name);
+	enum { PidSort, NameSort } sort(flags & NumericSort ? PidSort : NameSort);
 
 	_foreach (PidMap, pid, pids)
 	{
@@ -253,9 +307,9 @@ int main(int argc, char *argv[])
 			parent->second->child(proc);
 	}
 
-	if (hpid != -2)
+	if (flags & Highlight)
 	{
-		PidMap::iterator pid(pids.find(hpid != -1 ? hpid : getpid()));
+		PidMap::iterator pid(pids.find(hpid));
 
 		if (pid != pids.end())
 			pid->second->highlight();
@@ -270,17 +324,18 @@ int main(int argc, char *argv[])
 		if (proc->root())
 			switch (sort)
 			{
-			case Pid:
+			case PidSort:
 				proc->printByPid();
+
 				break;
-			case Name:
+			case NameSort:
 				names.insert(NameMap::value_type(proc->name(), proc));
 			}
 	}
 
 	switch (sort)
 	{
-	case Name:
+	case NameSort:
 		_foreach (NameMap, name, names)
 			name->second->printByName();
 	default:

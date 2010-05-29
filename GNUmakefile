@@ -1,6 +1,7 @@
-CPPFLAGS := -I/usr/local/include
-CXXFLAGS := -pedantic -Wall -O2 -Wno-long-long
-LDFLAGS := -L/usr/local/lib
+CPPFLAGS ?= -I/usr/local/include
+CXXFLAGS ?= -g -O2
+CXXFLAGS += -pedantic -Wall -Wno-long-long
+LDFLAGS ?= -L/usr/local/lib
 LDLIBS := -lkvm -lpopt
 
 .PHONY: all man clean
@@ -13,4 +14,4 @@ man1/%.1: %
 	help2man -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell realpath $<)
 
 clean:
-	rm -f dtpstree
+	rm -f dtpstree $(wildcard *core)
