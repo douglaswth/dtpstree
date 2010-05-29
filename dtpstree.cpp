@@ -71,6 +71,9 @@ public:
 
 	void child(Proc *proc)
 	{
+		if (proc == this)
+			return;
+
 		proc->parent_ = this;
 		childrenByPid_[proc->pid()] = proc;
 
@@ -111,7 +114,17 @@ private:
 		if (highlight_)
 			print << "\033[1m";
 
-		print << name();
+		if (flags_ & ShowTitles)
+		{
+			char **argv(kvm_getargv(kd_, proc_, 0));
+
+			if (argv)
+				print << *argv;
+			else
+				print << name();
+		}
+		else
+			print << name();
 
 		bool _pid(flags_ & ShowPids), _args(flags_ & Arguments);
 		bool change(flags_ & UidChanges && parent_ && uid() != parent_->uid());
