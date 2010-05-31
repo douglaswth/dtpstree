@@ -1,0 +1,23 @@
+[DESCRIPTION]
+.B dtpstree
+shows running processes as a tree.
+[AUTHOR]
+Written by \fBDouglas Thrift\fR <\fIdouglas@douglasthrift.net\fR>.
+[SEE ALSO]
+.PP
+\fBps\fR(1), \fBkvm\fR(3), \fBkvm_getargv\fR(3), \fBkvm_getprocs\fR(3).
+[COPYRIGHT]
+.PP
+Copyright 2010 Douglas Thrift
+.PP
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+.PP
+    \fIhttp://www.apache.org/licenses/LICENSE\-2.0\fR
+.PP
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an \fB"AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND\fR, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

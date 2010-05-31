@@ -2,7 +2,22 @@
 //
 // Douglas Thrift
 //
-// $Id$
+// dtpstree.cpp
+
+/*  Copyright 2010 Douglas Thrift
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
 #include <climits>
 #include <cstdio>
@@ -201,18 +216,15 @@ static void help(const char *program, option options[], int code = 0)
 	for (option *option(options); option->name; ++option)
 	{
 		std::string name(option->name);
-
-		if (name == "highlight")
-			continue;
-
 		std::ostringstream arguments;
 
 		switch (option->val)
 		{
-		case 'h':
-			arguments << "-h, --highlight"; break;
 		case 'H':
-			arguments << "-H PID, --highlight=PID"; break;
+			if (name != "highlight")
+				continue;
+
+			arguments << "-H[PID], --highlight[=PID]"; break;
 		case 0:
 			if (name == "pid")
 				arguments << "PID, --pid=PID";
@@ -239,9 +251,9 @@ static void help(const char *program, option options[], int code = 0)
 		case 'c':
 			description = "don't compact identical subtrees"; break;
 		case 'h':
-			description = "highlight the current process and its ancestors"; break;
+			description = "show this help message and exit"; break;
 		case 'H':
-			description = "highlight the process PID and its ancestors"; break;
+			description = "highlight the current process (or PID) and its\n                              ancestors"; break;
 		case 'G':
 			description = "use VT100 line drawing characters"; break;
 		case 'k':
@@ -261,15 +273,13 @@ static void help(const char *program, option options[], int code = 0)
 		case 'V':
 			description = "show version information and exit"; break;
 		case 0:
-			if (name == "help")
-				description = "show this help message and exit";
-			else if (name == "pid")
+			if (name == "pid")
 				description = "show only the tree roted at the process PID";
 			else if (name == "user")
 				description = "show only trees rooted at processes of USER";
 		}
 
-		std::printf("  %-25s %s\n", arguments.str().c_str(), description);
+		std::printf("  %-27s %s\n", arguments.str().c_str(), description);
 	}
 
 	std::exit(code);
@@ -311,8 +321,9 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		{ "arguments", no_argument, NULL, 'a' },
 		{ "ascii", no_argument, NULL, 'A' },
 		{ "compact", no_argument, NULL, 'c' },
-		{ "highlight", optional_argument, NULL, 0 },
-		{ "highlight-all", no_argument, NULL, 'h' },
+		{ "help", no_argument, NULL, 'h' },
+		{ "highlight", optional_argument, NULL, 'H' },
+		{ "highlight-all", no_argument, NULL, 'H' },
 		{ "highlight-pid", required_argument, NULL, 'H' },
 		{ "vt100", no_argument, NULL, 'G' },
 		{ "show-kernel", no_argument, NULL, 'k' },
@@ -323,7 +334,6 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		{ "uid-changes", no_argument, NULL, 'u' },
 		{ "unicode", no_argument, NULL, 'U' },
 		{ "version", no_argument, NULL, 'V' },
-		{ "help", no_argument, NULL, 0 },
 		{ "pid", required_argument, NULL, 0 },
 		{ "user", required_argument, NULL, 0 },
 		{ NULL, 0, NULL, 0 }
@@ -331,7 +341,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 	int option, index, flags(0);
 	char *program(argv[0]);
 
-	while ((option = getopt_long(argc, argv, "aAchH:GklnptuUV", options, &index)) != -1)
+	while ((option = getopt_long(argc, argv, "aAchH::GklnptuUV", options, &index)) != -1)
 		switch (option)
 		{
 		case 'a':
@@ -345,12 +355,9 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		case 'c':
 			flags |= Compact; break;
 		case 'h':
-			hpid = getpid();
-			flags |= Highlight;
-
-			break;
+			help(program, options);
 		case 'H':
-			hpid = value<pid_t, 0, INT_MAX>(program, options);
+			hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
 			flags |= Highlight;
 
 			break;
@@ -384,12 +391,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 			{
 				std::string option(options[index].name);
 
-				if (option == "highlight")
-				{
-					hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
-					flags |= Highlight;
-				}
-				else if (option == "pid")
+				if (option == "pid")
 				{
 					pid = value<pid_t, 0, INT_MAX>(program, options);
 					flags |= Pid;
@@ -403,8 +405,6 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 					flags |= User;
 					flags &= ~Pid;
 				}
-				else
-					help(program, options);
 			}
 
 			break;

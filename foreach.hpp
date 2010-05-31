@@ -2,7 +2,7 @@
 //
 // Douglas Thrift
 //
-// $Id: foreach.hpp 1263 2010-03-21 13:30:15Z douglas $
+// foreach.hpp
 
 /* Menes - C++ High-Level Utility Library
  * Copyright (C) 2004  Jay Freeman (saurik)

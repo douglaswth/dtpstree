@@ -5,6 +5,9 @@ dtpstree \- display a tree of processes
 .SH SYNOPSIS
 .B dtpstree
 [\fIoptions\fR] [\fIPID|USER\fR]
+.SH DESCRIPTION
+.B dtpstree
+shows running processes as a tree.
 .SH OPTIONS
 .TP
 \fB\-a\fR, \fB\-\-arguments\fR
@@ -16,11 +19,12 @@ use ASCII line drawing characters
 \fB\-c\fR, \fB\-\-compact\fR
 don't compact identical subtrees
 .TP
-\fB\-h\fR, \fB\-\-highlight\fR
-highlight the current process and its ancestors
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
 .TP
-\fB\-H\fR PID, \fB\-\-highlight\fR=\fIPID\fR
-highlight the process PID and its ancestors
+\fB\-H[PID]\fR, \fB\-\-highlight\fR[=\fIPID\fR]
+highlight the current process (or PID) and its
+ancestors
 .TP
 \fB\-G\fR, \fB\-\-vt100\fR
 use VT100 line drawing characters
@@ -49,11 +53,28 @@ use Unicode line drawing characters
 \fB\-V\fR, \fB\-\-version\fR
 show version information and exit
 .TP
-\fB\-\-help\fR
-show this help message and exit
-.TP
 PID, \fB\-\-pid\fR=\fIPID\fR
 show only the tree roted at the process PID
 .TP
 USER, \fB\-\-user\fR=\fIUSER\fR
 show only trees rooted at processes of USER
+.SH AUTHOR
+Written by \fBDouglas Thrift\fR <\fIdouglas@douglasthrift.net\fR>.
+.SH COPYRIGHT
+.PP
+Copyright 2010 Douglas Thrift
+.PP
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+.PP
+    \fIhttp://www.apache.org/licenses/LICENSE\-2.0\fR
+.PP
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an \fB"AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND\fR, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+.SH "SEE ALSO"
+.PP
+\fBps\fR(1), \fBkvm\fR(3), \fBkvm_getargv\fR(3), \fBkvm_getprocs\fR(3).
