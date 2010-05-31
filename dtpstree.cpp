@@ -14,10 +14,10 @@
 
 #include <err.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <kvm.h>
 #include <libgen.h>
 #include <paths.h>
-#include <popt.h>
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -194,93 +194,254 @@ private:
 	}
 };
 
-int main(int argc, char *argv[])
+static void help(const char *program, option options[], int code = 0)
 {
-	int flags(0);
-	pid_t hpid, pid;
-	char *user(NULL);
+	std::cout << "Usage: " << basename(program) << " [options] [PID|USER]" << std::endl << std::endl << "Options:" << std::endl;
 
+	for (option *option(options); option->name; ++option)
 	{
-		poptOption options[] = {
-			{ "arguments", 'a', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Arguments, "show command line arguments", NULL },
-			{ "ascii", 'A', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Ascii, "use ASCII line drawing characters", NULL },
-			{ "compact", 'c', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Compact, "don't compact identical subtrees", NULL },
-			{ "highlight-all", 'h', POPT_ARG_NONE, NULL, 'h', "highlight current process and its ancestors", NULL },
-			{ "highlight-pid", 'H', POPT_ARG_INT, &hpid, 'H', "highlight this process and its ancestors", "PID" },
-			{ "vt100", 'G', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Vt100, "use VT100 line drawing characters", NULL },
-			{ "show-kernel", 'k', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowKernel, "show kernel processes", NULL },
-			{ "long", 'l', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Long, "don't truncate long lines", NULL },
-			{ "numeric-sort", 'n', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, NumericSort, "sort output by PID", NULL },
-			{ "show-pids", 'p', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowPids, "show PIDs; implies -c", NULL },
-			{ "show-titles", 't', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, ShowTitles, "show process titles", NULL },
-			{ "uid-changes", 'u', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, UidChanges, "show uid transitions", NULL },
-			{ "unicode", 'U', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Unicode, "use Unicode line drawing characters", NULL },
-			{ "version", 'V', POPT_ARG_VAL | POPT_ARGFLAG_OR, &flags, Version, "display version information", NULL },
-			{ "pid", '\0', POPT_ARG_INT, &pid, 'p', "start at this PID", "PID" },
-			{ "user", '\0', POPT_ARG_STRING, &user, 'u', "show only trees rooted at processes of this user", "USER" },
-			POPT_AUTOHELP
-			POPT_TABLEEND
-		};
-		poptContext context(poptGetContext(NULL, argc, const_cast<const char **>(argv), options, 0));
-		int versionArgc;
-		const char **versionArgv;
+		std::string name(option->name);
 
-		poptParseArgvString("-V", &versionArgc, &versionArgv);
+		if (name == "highlight")
+			continue;
 
-		poptAlias versionAlias = { NULL, 'v', versionArgc, versionArgv };
+		std::ostringstream arguments;
 
-		poptAddAlias(context, versionAlias, 0);
-		poptSetOtherOptionHelp(context, "[OPTION...] [PID|USER]");
-
-		int option;
-
-		while ((option = poptGetNextOpt(context)) >= 0)
-			switch (option)
-			{
-			case 'h':
-				hpid = getpid();
-			case 'H':
-				flags |= Highlight;
-
-				break;
-			case 'p':
-				flags |= Pid;
-				flags &= ~User;
-
-				break;
-			case 'u':
-				flags |= User;
-				flags &= ~Pid;
-			}
-
-		if (option != -1)
-			errx(1, "%s: %s", poptStrerror(option), poptBadOption(context, 0));
-
-		for (const char **arg(poptGetArgs(context)); arg && *arg; ++arg)
+		switch (option->val)
 		{
-			char *end;
-			long value(std::strtol(*arg, &end, 0));
-
-			if (*arg == end || *end != '\0')
-			{
-				std::free(user);
-
-				user = strdup(*arg);
-				flags |= User;
-				flags &= ~Pid;
-			}
-			else if (value > INT_MAX || value < INT_MIN)
-				errx(1, "%s: %s", poptStrerror(POPT_ERROR_OVERFLOW), *arg);
+		case 'h':
+			arguments << "-h, --highlight"; break;
+		case 'H':
+			arguments << "-H PID, --highlight=PID"; break;
+		case 0:
+			if (name == "pid")
+				arguments << "PID, --pid=PID";
+			else if (name == "user")
+				arguments << "USER, --user=USER";
 			else
-			{
-				pid = value;
-				flags |= Pid;
-				flags &= ~User;
-			}
+				goto argument;
+
+			break;
+		default:
+			arguments << '-' << static_cast<char>(option->val) << ", ";
+		argument:
+			arguments << "--" << name;
 		}
 
-		poptFreeContext(context);
+		const char *description("");
+
+		switch (option->val)
+		{
+		case 'a':
+			description = "show command line arguments"; break;
+		case 'A':
+			description = "use ASCII line drawing characters"; break;
+		case 'c':
+			description = "don't compact identical subtrees"; break;
+		case 'h':
+			description = "highlight the current process and its ancestors"; break;
+		case 'H':
+			description = "highlight the process PID and its ancestors"; break;
+		case 'G':
+			description = "use VT100 line drawing characters"; break;
+		case 'k':
+			description = "show kernel processes"; break;
+		case 'l':
+			description = "don't truncate long lines"; break;
+		case 'n':
+			description = "sort output by PID"; break;
+		case 'p':
+			description = "show PIDs; implies -c"; break;
+		case 't':
+			description = "show process titles"; break;
+		case 'u':
+			description = "show uid transitions"; break;
+		case 'U':
+			description = "use Unicode line drawing characters"; break;
+		case 'V':
+			description = "show version information and exit"; break;
+		case 0:
+			if (name == "help")
+				description = "show this help message and exit";
+			else if (name == "pid")
+				description = "show only the tree roted at the process PID";
+			else if (name == "user")
+				description = "show only trees rooted at processes of USER";
+		}
+
+		std::printf("  %-25s %s\n", arguments.str().c_str(), description);
 	}
+
+	std::exit(code);
+}
+
+template <typename Type, long minimum, long maximum>
+static Type value(char *program, option options[], bool *success = NULL)
+{
+	char *end;
+	long value(std::strtol(optarg, &end, 0));
+
+	if (optarg == end || *end != '\0')
+		if (success)
+			*success = false;
+		else
+		{
+			warnx("invalid numeric value: \"%s\"", optarg);
+			help(program, options, 1);
+		}
+	else if (value < minimum)
+	{
+		warnx("number too small: %s", optarg);
+		help(program, options, 1);
+	}
+	else if (value > maximum)
+	{
+		warnx("number too large: %s", optarg);
+		help(program, options, 1);
+	}
+	else if (success)
+		*success = true;
+
+	return value;
+}
+
+static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
+{
+	option options[] = {
+		{ "arguments", no_argument, NULL, 'a' },
+		{ "ascii", no_argument, NULL, 'A' },
+		{ "compact", no_argument, NULL, 'c' },
+		{ "highlight", optional_argument, NULL, 0 },
+		{ "highlight-all", no_argument, NULL, 'h' },
+		{ "highlight-pid", required_argument, NULL, 'H' },
+		{ "vt100", no_argument, NULL, 'G' },
+		{ "show-kernel", no_argument, NULL, 'k' },
+		{ "long", no_argument, NULL, 'l' },
+		{ "numeric-sort", no_argument, NULL, 'n' },
+		{ "show-pids", no_argument, NULL, 'p' },
+		{ "show-titles", no_argument, NULL, 't' },
+		{ "uid-changes", no_argument, NULL, 'u' },
+		{ "unicode", no_argument, NULL, 'U' },
+		{ "version", no_argument, NULL, 'V' },
+		{ "help", no_argument, NULL, 0 },
+		{ "pid", required_argument, NULL, 0 },
+		{ "user", required_argument, NULL, 0 },
+		{ NULL, 0, NULL, 0 }
+	};
+	int option, index, flags(0);
+	char *program(argv[0]);
+
+	while ((option = getopt_long(argc, argv, "aAchH:GklnptuUV", options, &index)) != -1)
+		switch (option)
+		{
+		case 'a':
+			flags |= Arguments; break;
+		case 'A':
+			flags |= Ascii;
+			flags &= ~Vt100;
+			flags &= ~Unicode;
+
+			break;
+		case 'c':
+			flags |= Compact; break;
+		case 'h':
+			hpid = getpid();
+			flags |= Highlight;
+
+			break;
+		case 'H':
+			hpid = value<pid_t, 0, INT_MAX>(program, options);
+			flags |= Highlight;
+
+			break;
+		case 'G':
+			flags |= Vt100;
+			flags &= ~Ascii;
+			flags &= ~Unicode;
+
+			break;
+		case 'k':
+			flags |= ShowKernel; break;
+		case 'l':
+			flags |= Long; break;
+		case 'n':
+			flags |= NumericSort; break;
+		case 'p':
+			flags |= ShowPids; break;
+		case 't':
+			flags |= ShowTitles; break;
+		case 'u':
+			flags |= UidChanges; break;
+		case 'U':
+			flags |= Unicode;
+			flags &= ~Ascii;
+			flags &= ~Vt100;
+
+			break;
+		case 'V':
+			flags |= Version; break;
+		case 0:
+			{
+				std::string option(options[index].name);
+
+				if (option == "highlight")
+				{
+					hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
+					flags |= Highlight;
+				}
+				else if (option == "pid")
+				{
+					pid = value<pid_t, 0, INT_MAX>(program, options);
+					flags |= Pid;
+					flags &= ~User;
+				}
+				else if (option == "user")
+				{
+					std::free(user);
+
+					user = strdup(optarg);
+					flags |= User;
+					flags &= ~Pid;
+				}
+				else
+					help(program, options);
+			}
+
+			break;
+		case '?':
+			help(program, options, 1);
+		}
+
+	_forall (int, index, optind, argc)
+	{
+		bool success;
+
+		optarg = argv[index];
+		pid = value<pid_t, 0, INT_MAX>(program, options, &success);
+
+		if (success)
+		{
+			std::free(user);
+
+			user = strdup(optarg);
+			flags |= User;
+			flags &= ~Pid;
+		}
+		else
+		{
+			flags |= Pid;
+			flags &= ~User;
+		}
+	}
+
+	return flags;
+}
+
+int main(int argc, char *argv[])
+{
+	pid_t hpid, pid;
+	char *user(NULL);
+	int flags(options(argc, argv, hpid, pid, user));
 
 	if (flags & Version)
 	{

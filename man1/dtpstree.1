@@ -4,8 +4,8 @@
 dtpstree \- display a tree of processes
 .SH SYNOPSIS
 .B dtpstree
-[\fIOPTION\fR...] [\fIPID|USER\fR]
-.SH DESCRIPTION
+[\fIoptions\fR] [\fIPID|USER\fR]
+.SH OPTIONS
 .TP
 \fB\-a\fR, \fB\-\-arguments\fR
 show command line arguments
@@ -16,11 +16,11 @@ use ASCII line drawing characters
 \fB\-c\fR, \fB\-\-compact\fR
 don't compact identical subtrees
 .TP
-\fB\-h\fR, \fB\-\-highlight\-all\fR
-highlight current process and its ancestors
+\fB\-h\fR, \fB\-\-highlight\fR
+highlight the current process and its ancestors
 .TP
-\fB\-H\fR, \fB\-\-highlight\-pid\fR=\fIPID\fR
-highlight this process and its ancestors
+\fB\-H\fR PID, \fB\-\-highlight\fR=\fIPID\fR
+highlight the process PID and its ancestors
 .TP
 \fB\-G\fR, \fB\-\-vt100\fR
 use VT100 line drawing characters
@@ -47,17 +47,13 @@ show uid transitions
 use Unicode line drawing characters
 .TP
 \fB\-V\fR, \fB\-\-version\fR
-display version information
+show version information and exit
 .TP
-\fB\-\-pid\fR=\fIPID\fR
-start at this PID
+\fB\-\-help\fR
+show this help message and exit
 .TP
-\fB\-\-user\fR=\fIUSER\fR
-show only trees rooted at processes of this user
-.SS "Help options:"
+PID, \fB\-\-pid\fR=\fIPID\fR
+show only the tree roted at the process PID
 .TP
-\-?, \fB\-\-help\fR
-Show this help message
-.TP
-\fB\-\-usage\fR
-Display brief usage message
+USER, \fB\-\-user\fR=\fIUSER\fR
+show only trees rooted at processes of USER

@@ -1,8 +1,6 @@
-CPPFLAGS ?= -I/usr/local/include
 CXXFLAGS ?= -g -O2
 CXXFLAGS += -pedantic -Wall -Wno-long-long
-LDFLAGS ?= -L/usr/local/lib
-LDLIBS := -lkvm -lpopt
+LDLIBS := -lkvm
 
 .PHONY: all man clean
 
