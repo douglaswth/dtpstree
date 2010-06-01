@@ -304,12 +304,12 @@ static Type value(char *program, option options[], bool *success = NULL)
 			warnx("invalid numeric value: \"%s\"", optarg);
 			help(program, options, 1);
 		}
-	else if (value < minimum)
+	else if (value <= minimum)
 	{
 		warnx("number too small: %s", optarg);
 		help(program, options, 1);
 	}
-	else if (value > maximum)
+	else if (value >= maximum)
 	{
 		warnx("number too large: %s", optarg);
 		help(program, options, 1);
@@ -362,7 +362,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		case 'h':
 			help(program, options);
 		case 'H':
-			hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
+			hpid = optarg ? value<pid_t, -1, INT_MAX>(program, options) : getpid();
 			flags |= Highlight;
 
 			break;
@@ -398,7 +398,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 
 				if (option == "pid")
 				{
-					pid = value<pid_t, 0, INT_MAX>(program, options);
+					pid = value<pid_t, -1, INT_MAX>(program, options);
 					flags |= Pid;
 					flags &= ~User;
 				}
@@ -422,20 +422,20 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		bool success;
 
 		optarg = argv[index];
-		pid = value<pid_t, 0, INT_MAX>(program, options, &success);
+		pid = value<pid_t, -1, INT_MAX>(program, options, &success);
 
 		if (success)
+		{
+			flags |= Pid;
+			flags &= ~User;
+		}
+		else
 		{
 			std::free(user);
 
 			user = strdup(optarg);
 			flags |= User;
 			flags &= ~Pid;
-		}
-		else
-		{
-			flags |= Pid;
-			flags &= ~User;
 		}
 	}
 
@@ -444,7 +444,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 
 int main(int argc, char *argv[])
 {
-	pid_t hpid, pid;
+	pid_t hpid(-1), pid(-1);
 	char *user(NULL);
 	int flags(options(argc, argv, hpid, pid, user));
 

@@ -1,5 +1,5 @@
 CXXFLAGS ?= -g -O2
-CXXFLAGS += -pedantic -Wall -Wno-long-long
+CXXFLAGS += -Wall -Wno-long-long
 LDLIBS := -lkvm
 
 .PHONY: all man clean
