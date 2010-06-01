@@ -21,17 +21,22 @@
 
 #include <climits>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
 
+#ifndef __GLIBC__
+#include <libgen.h>
+#endif
+
 #include <err.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <kvm.h>
-#include <libgen.h>
 #include <paths.h>
 #include <pwd.h>
 #include <sys/param.h>
