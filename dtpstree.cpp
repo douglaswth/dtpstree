@@ -78,13 +78,21 @@ enum Flags
 	User		= 0x4000
 };
 
+struct Branch
+{
+	std::string indentation_;
+	bool done_;
+
+	Branch(size_t indentation) : indentation_(indentation, ' '), done_(false) {}
+};
+
 class Tree
 {
 	const int &flags_;
 	bool vt100_;
-	std::string horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_;
+	wchar_t horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_;
 	int width_;
-	std::vector<std::string> indentations_;
+	std::vector<Branch> branches_;
 	bool first_, last_;
 
 public:
@@ -95,6 +103,8 @@ public:
 		if (flags & Ascii)
 		{
 		ascii:
+			std::setlocale(LC_CTYPE, "C");
+
 			horizontal_ = '-';
 			vertical_ = '|';
 			upAndRight_ = '`';
@@ -107,20 +117,18 @@ public:
 			if (!std::setlocale(LC_CTYPE, ""))
 				goto vt100;
 
-			if (!convert(horizontal_, L'\x2500'))
+			horizontal_ = L'\x2500';
+			vertical_ = L'\x2502';
+			upAndRight_ = L'\x2514';
+			verticalAndRight_ = L'\x251c';
+			downAndHorizontal_ = L'\x252c';
+
+			char *test;
+
+			if (asprintf(&test, "%C%C%C%C%C", horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_) == -1)
 				goto vt100;
 
-			if (!convert(vertical_, L'\x2502'))
-				goto vt100;
-
-			if (!convert(upAndRight_, L'\x2514'))
-				goto vt100;
-
-			if (!convert(verticalAndRight_, L'\x251c'))
-				goto vt100;
-
-			if (!convert(downAndHorizontal_, L'\x252c'))
-				goto vt100;
+			std::free(test);
 		}
 		else if (flags & Vt100)
 		{
@@ -139,9 +147,9 @@ public:
 
 		if (!(flags & Long) && tty)
 		{
-			int status;
+			int code;
 
-			if (setupterm(NULL, 1, &status) == OK)
+			if (setupterm(NULL, 1, &code) == OK)
 			{
 				width_ = tigetnum("cols");
 
@@ -158,34 +166,47 @@ public:
 		if (vt100_)
 			std::printf("\033(0\017");
 
-		size_t last(indentations_.size() - 1);
+		if (!first_ || flags_ & Arguments)
+		{
+			size_t last(branches_.size() - 1);
 
-		_foreach (std::vector<std::string>, indentation, indentations_)
-			if (_index != last)
-				std::printf("%s%s ", indentation->c_str(), vertical_.c_str());
-			else
-				std::printf("%s%s%s", indentation->c_str(), last_ ? upAndRight_.c_str() : verticalAndRight_.c_str(), horizontal_.c_str());
+			_foreach (std::vector<Branch>, branch, branches_)
+				if (_index == last)
+				{
+					wchar_t line;
+
+					if (last_)
+					{
+						branch->done_ = true;
+						line = upAndRight_;
+					}
+					else
+						line = verticalAndRight_;
+
+					std::printf("%s%C%C", branch->indentation_.c_str(), line, horizontal_);
+				}
+				else
+					std::printf("%s%C ", branch->indentation_.c_str(), branch->done_ ? ' ' : vertical_);
+		}
+		else if (branches_.size())
+			std::printf("%C%C%C", horizontal_, last_ ? horizontal_ : downAndHorizontal_, horizontal_);
 
 		if (vt100_)
 			std::printf("\033(B\017");
 
-		std::cout << string;
+		std::printf("%s", string.c_str());
 
-		size_t indentation(2);
-
-		if (!(flags_ & Arguments))
-			indentation += string.size();
-
-		indentations_.push_back(std::string(indentation, ' '));
+		branches_.push_back(Branch(!(flags_ & Arguments) ? string.size() + 1 : 2));
 	}
 
 	void printArg(const std::string &string)
 	{
+		std::printf(" %s", string.c_str());
 	}
 
 	void pop()
 	{
-		indentations_.pop_back();
+		branches_.pop_back();
 
 		std::printf("\n");
 	}
@@ -199,21 +220,6 @@ public:
 		last_ = last;
 
 		return *this;
-	}
-
-private:
-	inline bool convert(std::string &string, wchar_t atom)
-	{
-		int size;
-
-		string.resize(MB_LEN_MAX);
-
-		if ((size = std::wctomb(const_cast<char *>(string.data()), atom)) == -1)
-			return false;
-
-		string.resize(size);
-
-		return true;
 	}
 };
 
