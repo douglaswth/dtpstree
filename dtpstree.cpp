@@ -30,12 +30,15 @@
 #include <string>
 #include <vector>
 
-#ifndef __GLIBC__
+#ifdef __GLIBC__
+#include <bsd/stdlib.h>
+#else
 #include <libgen.h>
 #endif
 
 #include <curses.h>
 #include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <kvm.h>
