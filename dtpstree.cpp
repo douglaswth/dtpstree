@@ -189,7 +189,19 @@ public:
 					std::printf("%s%C ", branch->indentation_.c_str(), branch->done_ ? ' ' : vertical_);
 		}
 		else if (branches_.size())
-			std::printf("%C%C%C", horizontal_, last_ ? horizontal_ : downAndHorizontal_, horizontal_);
+		{
+			wchar_t line;
+
+			if (last_)
+			{
+				branches_.back().done_ = true;
+				line = horizontal_;
+			}
+			else
+				line = downAndHorizontal_;
+
+			std::printf("%C%C%C", horizontal_, line, horizontal_);
+		}
 
 		if (vt100_)
 			std::printf("\033(B\017");
