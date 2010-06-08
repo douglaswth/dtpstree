@@ -444,30 +444,20 @@ static void help(const char *program, option options[], int code = 0)
 	std::exit(code);
 }
 
-template <typename Type, long minimum, long maximum>
+template <typename Type, long long minimum, long long maximum>
 static Type value(char *program, option options[], bool *success = NULL)
 {
-	char *end;
-	long value(std::strtol(optarg, &end, 0));
+	const char *error;
+	long long value(strtonum(optarg, minimum, maximum, &error));
 
-	if (optarg == end || *end != '\0')
-		if (success)
+	if (error)
+		if (success && errno == EINVAL)
 			*success = false;
 		else
 		{
-			warnx("Invalid numeric value: \"%s\"", optarg);
+			warnx("Number is %s: \"%s\"", error, optarg);
 			help(program, options, 1);
 		}
-	else if (value <= minimum)
-	{
-		warnx("Number too small: %s", optarg);
-		help(program, options, 1);
-	}
-	else if (value >= maximum)
-	{
-		warnx("Number too large: %s", optarg);
-		help(program, options, 1);
-	}
 	else if (success)
 		*success = true;
 
@@ -516,7 +506,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		case 'h':
 			help(program, options);
 		case 'H':
-			hpid = optarg ? value<pid_t, -1, INT_MAX>(program, options) : getpid();
+			hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
 			flags |= Highlight;
 
 			break;
@@ -552,7 +542,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 
 				if (option == "pid")
 				{
-					pid = value<pid_t, -1, INT_MAX>(program, options);
+					pid = value<pid_t, 0, INT_MAX>(program, options);
 					flags |= Pid;
 					flags &= ~User;
 				}
@@ -576,7 +566,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		bool success;
 
 		optarg = argv[index];
-		pid = value<pid_t, -1, INT_MAX>(program, options, &success);
+		pid = value<pid_t, 0, INT_MAX>(program, options, &success);
 
 		if (success)
 		{
