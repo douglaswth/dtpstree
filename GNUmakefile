@@ -1,6 +1,6 @@
 CXXFLAGS ?= -g -O2
 CXXFLAGS += -Wall -Wno-long-long
-LDLIBS := -lkvm
+LDLIBS := -lkvm -lncurses
 
 .PHONY: all man clean
 

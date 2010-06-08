@@ -28,11 +28,13 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #ifndef __GLIBC__
 #include <libgen.h>
 #endif
 
+#include <curses.h>
 #include <err.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -42,6 +44,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
+#include <term.h>
 
 #include "foreach.hpp"
 
@@ -72,6 +75,145 @@ enum Flags
 	User		= 0x4000
 };
 
+class Tree
+{
+	const int &flags_;
+	bool vt100_;
+	std::string horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_;
+	int width_;
+	std::vector<std::string> indentations_;
+	bool first_, last_;
+
+public:
+	Tree(const int &flags) : flags_(flags)
+	{
+		bool tty(isatty(1));
+
+		if (flags & Ascii)
+		{
+		ascii:
+			horizontal_ = '-';
+			vertical_ = '|';
+			upAndRight_ = '`';
+			verticalAndRight_ = '|';
+			downAndHorizontal_ = '+';
+		}
+		else if (flags & Unicode)
+		{
+		unicode:
+			if (!std::setlocale(LC_CTYPE, ""))
+				goto vt100;
+
+			if (!convert(horizontal_, L'\x2500'))
+				goto vt100;
+
+			if (!convert(vertical_, L'\x2502'))
+				goto vt100;
+
+			if (!convert(upAndRight_, L'\x2514'))
+				goto vt100;
+
+			if (!convert(verticalAndRight_, L'\x251c'))
+				goto vt100;
+
+			if (!convert(downAndHorizontal_, L'\x252c'))
+				goto vt100;
+		}
+		else if (flags & Vt100)
+		{
+		vt100:
+			vt100_ = true;
+			horizontal_ = '\x71';
+			vertical_ = '\x78';
+			upAndRight_ = '\x6d';
+			verticalAndRight_ = '\x74';
+			downAndHorizontal_ = '\x77';
+		}
+		else if (tty)
+			goto unicode;
+		else
+			goto ascii;
+
+		if (!(flags & Long) && tty)
+		{
+			int status;
+
+			if (setupterm(NULL, 1, &status) == OK)
+			{
+				width_ = tigetnum("cols");
+
+				if (!tigetflag("xenl"))
+					--width_;
+			}
+			else
+				width_ = 79;
+		}
+	}
+
+	void print(const std::string &string)
+	{
+		if (vt100_)
+			std::printf("\033(0\017");
+
+		size_t last(indentations_.size() - 1);
+
+		_foreach (std::vector<std::string>, indentation, indentations_)
+			if (_index != last)
+				std::printf("%s%s ", indentation->c_str(), vertical_.c_str());
+			else
+				std::printf("%s%s%s", indentation->c_str(), verticalAndRight_.c_str(), horizontal_.c_str());
+
+		if (vt100_)
+			std::printf("\033(B\017");
+
+		std::cout << string;
+
+		size_t indentation(2);
+
+		if (!(flags_ & Arguments))
+			indentation += string.size();
+
+		indentations_.push_back(std::string(indentation, ' '));
+	}
+
+	void printArg(const std::string &string)
+	{
+	}
+
+	void pop()
+	{
+		indentations_.pop_back();
+
+		std::printf("\n");
+	}
+
+	Tree &operator()(bool first, bool last)
+	{
+		if (flags_ & Arguments || !first)
+			std::printf("\n");
+
+		first_ = first;
+		last_ = last;
+
+		return *this;
+	}
+
+private:
+	inline bool convert(std::string &string, wchar_t atom)
+	{
+		int size;
+
+		string.resize(MB_LEN_MAX);
+
+		if ((size = std::wctomb(const_cast<char *>(string.data()), atom)) == -1)
+			return false;
+
+		string.resize(size);
+
+		return true;
+	}
+};
+
 class Proc
 {
 	const int &flags_;
@@ -80,10 +222,10 @@ class Proc
 	Proc *parent_;
 	PidMap childrenByPid_;
 	NameMap childrenByName_;
-	bool highlight_;
+	bool highlight_, root_;
 
 public:
-	Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc) {}
+	inline Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc) {}
 
 	inline std::string name() const { return proc_->ki_comm; }
 	inline pid_t parent() const { return proc_->ki_ppid; }
@@ -108,26 +250,57 @@ public:
 			parent_->highlight();
 	}
 
-	inline bool root() const { return !parent_; }
-
-	void printByPid(const std::string &indent = "") const
+	bool root(uid_t uid)
 	{
-		std::cout << indent << print(indent.size()) << std::endl;
+		if (flags_ & User)
+		{
+			if (uid == this->uid())
+			{
+				Proc *parent(parent_);
 
-		_foreach (const PidMap, child, childrenByPid_)
-			child->second->printByPid(indent + "  ");
+				while (parent)
+				{
+					if (parent->uid() == uid)
+						return false;
+
+					parent = parent->parent_;
+				}
+
+				return root_ = true;
+			}
+
+			return false;
+		}
+
+		return root_ = !parent_;
 	}
 
-	void printByName(const std::string &indent = "") const
+	void printByPid(Tree &tree) const
 	{
-		std::cout << indent << print(indent.size()) << std::endl;
+		print(tree);
+
+		size_t last(childrenByPid_.size() - 1);
+
+		_foreach (const PidMap, child, childrenByPid_)
+			child->second->printByPid(tree(!_index, _index == last));
+
+		tree.pop();
+	}
+
+	void printByName(Tree &tree) const
+	{
+		print(tree);
+
+		size_t last(childrenByName_.size() - 1);
 
 		_foreach (const NameMap, child, childrenByName_)
-			child->second->printByName(indent + "  ");
+			child->second->printByName(tree(!_index, _index == last));
+
+		tree.pop();
 	}
 
 private:
-	std::string print(std::string::size_type indent) const
+	void print(Tree &tree) const
 	{
 		std::ostringstream print;
 
@@ -147,7 +320,7 @@ private:
 			print << name();
 
 		bool _pid(flags_ & ShowPids), _args(flags_ & Arguments);
-		bool change(flags_ & UidChanges && parent_ && uid() != parent_->uid());
+		bool change(flags_ & UidChanges && !root_ && parent_ && uid() != parent_->uid());
 		bool parens((_pid || change) && !_args);
 
 		if (parens)
@@ -166,7 +339,9 @@ private:
 			if (!parens || _pid)
 				print << ',';
 
-			print << user();
+			passwd *user(getpwuid(uid()));
+
+			print << user->pw_name;
 		}
 
 		if (parens)
@@ -175,48 +350,27 @@ private:
 		if (highlight_)
 			print << "\033[22m";
 
-		if (_args)
-			print << args(indent + print.str().size());
+		tree.print(print.str());
 
-		return print.str();
+		if (_args)
+		{
+			char **argv(kvm_getargv(kd_, proc_, 0));
+			std::ostringstream args;
+
+			if (argv && *argv)
+				for (++argv; *argv; ++argv)
+					tree.printArg(*argv);
+		}
 	}
 
 	inline bool children() const { return childrenByPid_.size(); }
 
 	inline uid_t uid() const { return proc_->ki_ruid; }
-
-	std::string user() const
-	{
-		passwd *user(getpwuid(uid()));
-
-		return user->pw_name;
-	}
-
-	std::string args(std::string::size_type indent) const
-	{
-		char **argv(kvm_getargv(kd_, proc_, 0));
-		std::ostringstream args;
-
-		if (argv && *argv)
-			for (++argv; *argv; ++argv)
-			{
-				if (!(flags_ & Long) && (indent += 1 + std::strlen(*argv)) > 75)
-				{
-					args << " ...";
-
-					break;
-				}
-
-				args << ' ' << *argv;
-			}
-
-		return args.str();
-	}
 };
 
 static void help(const char *program, option options[], int code = 0)
 {
-	std::cout << "Usage: " << basename(program) << " [options] [PID|USER]" << std::endl << std::endl << "Options:" << std::endl;
+	std::printf("Usage: %s [options] [PID|USER]\n\nOptions:\n", basename(program));
 
 	for (option *option(options); option->name; ++option)
 	{
@@ -279,7 +433,7 @@ static void help(const char *program, option options[], int code = 0)
 			description = "show version information and exit"; break;
 		case 0:
 			if (name == "pid")
-				description = "show only the tree roted at the process PID";
+				description = "show only the tree rooted at the process PID";
 			else if (name == "user")
 				description = "show only trees rooted at processes of USER";
 		}
@@ -301,17 +455,17 @@ static Type value(char *program, option options[], bool *success = NULL)
 			*success = false;
 		else
 		{
-			warnx("invalid numeric value: \"%s\"", optarg);
+			warnx("Invalid numeric value: \"%s\"", optarg);
 			help(program, options, 1);
 		}
 	else if (value <= minimum)
 	{
-		warnx("number too small: %s", optarg);
+		warnx("Number too small: %s", optarg);
 		help(program, options, 1);
 	}
 	else if (value >= maximum)
 	{
-		warnx("number too large: %s", optarg);
+		warnx("Number too large: %s", optarg);
 		help(program, options, 1);
 	}
 	else if (success)
@@ -450,9 +604,23 @@ int main(int argc, char *argv[])
 
 	if (flags & Version)
 	{
-		std::cout << DTPSTREE_PROGRAM " " DTPSTREE_VERSION << std::endl;
+		std::printf(DTPSTREE_PROGRAM " " DTPSTREE_VERSION "\n");
 
 		return 0;
+	}
+
+	uid_t uid(-1);
+
+	if (flags & User)
+	{
+		errno = 0;
+
+		passwd *_user(getpwnam(user));
+
+		if (!_user)
+			errno ? err(1, NULL) : errx(1, "Unknown user: \"%s\"", user);
+
+		uid = _user->pw_uid;
 	}
 
 	char error[_POSIX2_LINE_MAX];
@@ -494,17 +662,42 @@ int main(int argc, char *argv[])
 			pid->second->highlight();
 	}
 
+	Tree tree(flags);
+
+	if (flags & Pid)
+	{
+		PidMap::iterator _pid(pids.find(pid));
+
+		if (_pid != pids.end())
+		{
+			Proc *proc(_pid->second);
+
+			switch (sort)
+			{
+			case PidSort:
+				proc->printByPid(tree);
+
+				break;
+
+			case NameSort:
+				proc->printByName(tree);
+			}
+		}
+
+		return 0;
+	}
+
 	NameMap names;
 
 	_foreach (PidMap, pid, pids)
 	{
 		Proc *proc(pid->second);
 
-		if (proc->root())
+		if (proc->root(uid))
 			switch (sort)
 			{
 			case PidSort:
-				proc->printByPid();
+				proc->printByPid(tree);
 
 				break;
 			case NameSort:
@@ -516,20 +709,10 @@ int main(int argc, char *argv[])
 	{
 	case NameSort:
 		_foreach (NameMap, name, names)
-			name->second->printByName();
+			name->second->printByName(tree);
 	default:
-		break;
+		return 0;
 	}
-
-	std::setlocale(LC_ALL, "");
-
-	char line[MB_LEN_MAX];
-	int size(std::wctomb(line, L'└'));
-
-	if (size != -1)
-		std::cout << std::string(line, size) << std::endl;
-
-	return 0;
 }
 
 // display a tree of processes
