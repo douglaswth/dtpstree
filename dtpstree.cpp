@@ -161,7 +161,7 @@ public:
 			if (_index != last)
 				std::printf("%s%s ", indentation->c_str(), vertical_.c_str());
 			else
-				std::printf("%s%s%s", indentation->c_str(), verticalAndRight_.c_str(), horizontal_.c_str());
+				std::printf("%s%s%s", indentation->c_str(), last_ ? upAndRight_.c_str() : verticalAndRight_.c_str(), horizontal_.c_str());
 
 		if (vt100_)
 			std::printf("\033(B\017");
