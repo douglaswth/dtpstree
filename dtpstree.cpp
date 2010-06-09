@@ -96,20 +96,18 @@ class Tree
 	bool first_, last_;
 
 public:
-	Tree(const int &flags) : flags_(flags)
+	Tree(const int &flags) : flags_(flags), vt100_(false)
 	{
 		bool tty(isatty(1));
 
 		if (flags & Ascii)
 		{
 		ascii:
-			std::setlocale(LC_CTYPE, "C");
-
-			horizontal_ = '-';
-			vertical_ = '|';
-			upAndRight_ = '`';
-			verticalAndRight_ = '|';
-			downAndHorizontal_ = '+';
+			horizontal_ = L'-';
+			vertical_ = L'|';
+			upAndRight_ = L'`';
+			verticalAndRight_ = L'|';
+			downAndHorizontal_ = L'+';
 		}
 		else if (flags & Unicode)
 		{
@@ -134,11 +132,11 @@ public:
 		{
 		vt100:
 			vt100_ = true;
-			horizontal_ = '\x71';
-			vertical_ = '\x78';
-			upAndRight_ = '\x6d';
-			verticalAndRight_ = '\x74';
-			downAndHorizontal_ = '\x77';
+			horizontal_ = L'\x71';
+			vertical_ = L'\x78';
+			upAndRight_ = L'\x6d';
+			verticalAndRight_ = L'\x74';
+			downAndHorizontal_ = L'\x77';
 		}
 		else if (tty)
 			goto unicode;
@@ -161,7 +159,7 @@ public:
 		}
 	}
 
-	void print(const std::string &string)
+	void print(const std::string &string, bool highlight)
 	{
 		if (vt100_)
 			std::printf("\033(0\017");
@@ -206,28 +204,26 @@ public:
 		if (vt100_)
 			std::printf("\033(B\017");
 
-		std::printf("%s", string.c_str());
+		std::printf("%s%s%s", highlight ? "\033[1m" : "", string.c_str(), highlight ? "\033[22m" : "");
 
 		branches_.push_back(Branch(!(flags_ & Arguments) ? string.size() + 1 : 2));
 	}
 
-	void printArg(const std::string &string)
+	inline void printArg(const std::string &string) const
 	{
 		std::printf(" %s", string.c_str());
 	}
 
-	void pop()
+	inline void pop(bool children)
 	{
 		branches_.pop_back();
 
-		std::printf("\n");
+		if (!(flags_ & Arguments) && !children)
+			std::printf("\n");
 	}
 
 	Tree &operator()(bool first, bool last)
 	{
-		if (flags_ & Arguments || !first)
-			std::printf("\n");
-
 		first_ = first;
 		last_ = last;
 
@@ -246,7 +242,7 @@ class Proc
 	bool highlight_, root_;
 
 public:
-	inline Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc) {}
+	inline Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), highlight_(false), root_(false) {}
 
 	inline std::string name() const { return proc_->ki_comm; }
 	inline pid_t parent() const { return proc_->ki_ppid; }
@@ -305,7 +301,7 @@ public:
 		_foreach (const PidMap, child, childrenByPid_)
 			child->second->printByPid(tree(!_index, _index == last));
 
-		tree.pop();
+		tree.pop(children());
 	}
 
 	void printByName(Tree &tree) const
@@ -317,16 +313,13 @@ public:
 		_foreach (const NameMap, child, childrenByName_)
 			child->second->printByName(tree(!_index, _index == last));
 
-		tree.pop();
+		tree.pop(children());
 	}
 
 private:
 	void print(Tree &tree) const
 	{
 		std::ostringstream print;
-
-		if (highlight_)
-			print << "\033[1m";
 
 		if (flags_ & ShowTitles)
 		{
@@ -340,9 +333,9 @@ private:
 		else
 			print << name();
 
-		bool _pid(flags_ & ShowPids), _args(flags_ & Arguments);
+		bool _pid(flags_ & ShowPids), args(flags_ & Arguments);
 		bool change(flags_ & UidChanges && !root_ && parent_ && uid() != parent_->uid());
-		bool parens((_pid || change) && !_args);
+		bool parens((_pid || change) && !args);
 
 		if (parens)
 			print << '(';
@@ -368,12 +361,9 @@ private:
 		if (parens)
 			print << ')';
 
-		if (highlight_)
-			print << "\033[22m";
+		tree.print(print.str(), highlight_);
 
-		tree.print(print.str());
-
-		if (_args)
+		if (args)
 		{
 			char **argv(kvm_getargv(kd_, proc_, 0));
 			std::ostringstream args;
@@ -381,6 +371,8 @@ private:
 			if (argv && *argv)
 				for (++argv; *argv; ++argv)
 					tree.printArg(*argv);
+
+			std::printf("\n");
 		}
 	}
 
