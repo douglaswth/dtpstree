@@ -37,7 +37,7 @@ man1/%.1: % %.1.in
 	help2man -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell realpath $<)
 
 dist: man
-	git archive --prefix=$(TARNAME)/ -v HEAD^{tree} | xz -vz - > $(TARNAME).tar.xz
+	bsdtar -cf $(TARNAME).tar.bz2 -js '/^\./$(TARNAME)/' -vX .gitignore --exclude='.git*' .
 
 install: all
 	install -dv $(DESTDIR)$(BINDIR) $(DESTDIR)$(MAN1DIR)
