@@ -48,6 +48,7 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <term.h>
+#include <vis.h>
 
 #include "foreach.hpp"
 
@@ -236,6 +237,7 @@ class Proc
 	const int &flags_;
 	kvm_t *kd_;
 	kinfo_proc *proc_;
+	mutable std::string name_;
 	Proc *parent_;
 	PidMap childrenByPid_;
 	NameMap childrenByName_;
@@ -244,7 +246,14 @@ class Proc
 public:
 	inline Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), highlight_(false), root_(false) {}
 
-	inline std::string name() const { return proc_->ki_comm; }
+	inline std::string name() const
+	{
+		if (name_.empty())
+			name_ = visual(proc_->ki_comm);
+
+		return name_;
+	}
+
 	inline pid_t parent() const { return proc_->ki_ppid; }
 	inline pid_t pid() const { return proc_->ki_pid; }
 
@@ -317,6 +326,15 @@ public:
 	}
 
 private:
+	inline std::string visual(const char *string) const
+	{
+		std::string visual(std::strlen(string) * 4 + 1, '\0');
+
+		visual.resize(strvis(const_cast<char *>(visual.data()), string, VIS_TAB | VIS_NL | VIS_NOSLASH));
+
+		return visual;
+	}
+
 	void print(Tree &tree) const
 	{
 		std::ostringstream print;
@@ -326,7 +344,7 @@ private:
 			char **argv(kvm_getargv(kd_, proc_, 0));
 
 			if (argv)
-				print << *argv;
+				print << visual(*argv);
 			else
 				print << name();
 		}
@@ -370,7 +388,7 @@ private:
 
 			if (argv && *argv)
 				for (++argv; *argv; ++argv)
-					tree.printArg(*argv);
+					tree.printArg(visual(*argv));
 
 			std::printf("\n");
 		}
