@@ -19,7 +19,9 @@
  *  limitations under the License.
  */
 
+#include <cerrno>
 #include <climits>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -38,7 +40,6 @@
 
 #include <curses.h>
 #include <err.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <kvm.h>
@@ -70,7 +71,7 @@ enum Flags
 	ShowKernel	= 0x0020,
 	Long		= 0x0040,
 	NumericSort	= 0x0080,
-	ShowPids	= 0x0104,
+	ShowPids	= 0x0100,
 	ShowTitles	= 0x0200,
 	UidChanges	= 0x0400,
 	Unicode		= 0x0800,
@@ -79,25 +80,38 @@ enum Flags
 	User		= 0x4000
 };
 
+enum Escape { None, BoxDrawing, Bright };
+
+struct Segment
+{
+	size_t width_;
+	Escape escape_;
+	char *string_;
+
+	inline Segment(size_t width, Escape escape, char *string) : width_(width), escape_(escape), string_(string) {}
+};
+
 struct Branch
 {
 	std::string indentation_;
 	bool done_;
 
-	Branch(size_t indentation) : indentation_(indentation, ' '), done_(false) {}
+	inline Branch(size_t indentation) : indentation_(indentation, ' '), done_(false) {}
 };
 
 class Tree
 {
-	const int &flags_;
+	const uint16_t &flags_;
 	bool vt100_;
 	wchar_t horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_;
-	int width_;
+	size_t maxWidth_, width_;
+	bool max_, suppress_;
+	std::vector<Segment> segments_;
 	std::vector<Branch> branches_;
 	bool first_, last_;
 
 public:
-	Tree(const int &flags) : flags_(flags), vt100_(false)
+	Tree(const uint16_t &flags) : flags_(flags), vt100_(false), maxWidth_(0), width_(0), max_(false), suppress_(false)
 	{
 		bool tty(isatty(1));
 
@@ -124,7 +138,7 @@ public:
 
 			char *test;
 
-			if (asprintf(&test, "%C%C%C%C%C", horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_) == -1)
+			if (asprintf(&test, "%lc%lc%lc%lc%lc", horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_) == -1)
 				goto vt100;
 
 			std::free(test);
@@ -150,26 +164,28 @@ public:
 
 			if (setupterm(NULL, 1, &code) == OK)
 			{
-				width_ = tigetnum("cols");
+				maxWidth_ = tigetnum("cols");
 
-				if (!tigetflag("xenl"))
-					--width_;
+				if (tigetflag("am") && !tigetflag("xenl"))
+					suppress_ = true;
 			}
 			else
-				width_ = 79;
+				maxWidth_ = 80;
 		}
 	}
 
 	void print(const std::string &string, bool highlight)
 	{
-		if (vt100_)
-			std::printf("\033(0\017");
+		Escape escape(vt100_ ? BoxDrawing : None);
 
 		if (!first_ || flags_ & Arguments)
 		{
 			size_t last(branches_.size() - 1);
 
 			_foreach (std::vector<Branch>, branch, branches_)
+			{
+				size_t width(branch->indentation_.size() + 2);
+
 				if (_index == last)
 				{
 					wchar_t line;
@@ -182,10 +198,11 @@ public:
 					else
 						line = verticalAndRight_;
 
-					std::printf("%s%C%C", branch->indentation_.c_str(), line, horizontal_);
+					print(width, escape, "%s%lc%lc", branch->indentation_.c_str(), line, horizontal_);
 				}
 				else
-					std::printf("%s%C ", branch->indentation_.c_str(), branch->done_ ? ' ' : vertical_);
+					print(width, escape, "%s%lc ", branch->indentation_.c_str(), branch->done_ ? ' ' : vertical_);
+			}
 		}
 		else if (branches_.size())
 		{
@@ -199,20 +216,17 @@ public:
 			else
 				line = downAndHorizontal_;
 
-			std::printf("%C%C%C", horizontal_, line, horizontal_);
+			print(3, escape, "%lc%lc%lc", horizontal_, line, horizontal_);
 		}
 
-		if (vt100_)
-			std::printf("\033(B\017");
-
-		std::printf("%s%s%s", highlight ? "\033[1m" : "", string.c_str(), highlight ? "\033[22m" : "");
+		print(string.size(), highlight ? Bright : None, "%s", string.c_str());
 
 		branches_.push_back(Branch(!(flags_ & Arguments) ? string.size() + 1 : 2));
 	}
 
-	inline void printArg(const std::string &string) const
+	inline void printArg(const std::string &string)
 	{
-		std::printf(" %s", string.c_str());
+		//std::printf(" %s", string.c_str());
 	}
 
 	inline void pop(bool children)
@@ -220,21 +234,109 @@ public:
 		branches_.pop_back();
 
 		if (!(flags_ & Arguments) && !children)
-			std::printf("\n");
+			done();
 	}
 
-	Tree &operator()(bool first, bool last)
+	inline void done()
+	{
+		_foreach (std::vector<Segment>, segment, segments_)
+		{
+			const char *begin, *end;
+
+			switch (segment->escape_)
+			{
+			case BoxDrawing:
+				begin = "\033(0\017";
+				end = "\033(B\017";
+				break;
+			case Bright:
+				begin = "\033[1m";
+				end = "\033[22m";
+				break;
+			default:
+				begin = end = ""; break;
+			}
+
+			std::printf("%s%s%s", begin, segment->string_, end);
+			std::free(segment->string_);
+		}
+
+		segments_.clear();
+
+		if (suppress_ && width_ == maxWidth_)
+			std::fflush(stdout);
+		else
+			std::printf("\n");
+
+		width_ = 0;
+		max_ = false;
+	}
+
+	inline Tree &operator()(bool first, bool last)
 	{
 		first_ = first;
 		last_ = last;
 
 		return *this;
 	}
+
+private:
+	void print(size_t width, Escape escape, const char * format, ...)
+	{
+		if (max_)
+			return;
+
+		std::va_list args;
+
+		va_start(args, format);
+
+		char *string;
+
+		vasprintf(&string, format, args);
+		va_end(args);
+
+		width_ += width;
+
+		if (maxWidth_ && !(flags_ & Long))
+			if (width_ > maxWidth_)
+			{
+				width -= (width_ - maxWidth_);
+				width_ = maxWidth_;
+				max_ = true;
+
+				bool previous = !width;
+
+				if (previous)
+				{
+					std::free(string);
+
+					const Segment &segment(segments_.back());
+
+					width = segment.width_;
+					string = segment.string_;
+				}
+
+				std::wstring wide(width - 1, '\0');
+
+				std::mbstowcs(const_cast<wchar_t *>(wide.data()), string, wide.size());
+				std::free(string);
+				asprintf(&string, "%ls+", wide.c_str());
+
+				if (previous)
+				{
+					segments_.back().string_ = string;
+
+					return;
+				}
+			}
+
+		segments_.push_back(Segment(width, escape, string));
+	}
 };
 
 class Proc
 {
-	const int &flags_;
+	const uint16_t &flags_;
 	kvm_t *kd_;
 	kinfo_proc *proc_;
 	mutable std::string name_;
@@ -244,7 +346,7 @@ class Proc
 	bool highlight_, root_;
 
 public:
-	inline Proc(const int &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), highlight_(false), root_(false) {}
+	inline Proc(const uint16_t &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), parent_(NULL), highlight_(false), root_(false) {}
 
 	inline std::string name() const
 	{
@@ -390,7 +492,7 @@ private:
 				for (++argv; *argv; ++argv)
 					tree.printArg(visual(*argv));
 
-			std::printf("\n");
+			tree.done();
 		}
 	}
 
@@ -495,7 +597,7 @@ static Type value(char *program, option options[], bool *success = NULL)
 	return value;
 }
 
-static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
+static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 {
 	option options[] = {
 		{ "arguments", no_argument, NULL, 'a' },
@@ -518,7 +620,8 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		{ "user", required_argument, NULL, 0 },
 		{ NULL, 0, NULL, 0 }
 	};
-	int option, index, flags(0);
+	int option, index;
+	uint16_t flags(0);
 	char *program(argv[0]);
 
 	while ((option = getopt_long(argc, argv, "aAchH::GklnptuUV", options, &index)) != -1)
@@ -554,7 +657,7 @@ static int options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
 		case 'n':
 			flags |= NumericSort; break;
 		case 'p':
-			flags |= ShowPids; break;
+			flags |= Compact | ShowPids; break;
 		case 't':
 			flags |= ShowTitles; break;
 		case 'u':
@@ -621,7 +724,7 @@ int main(int argc, char *argv[])
 {
 	pid_t hpid(-1), pid(-1);
 	char *user(NULL);
-	int flags(options(argc, argv, hpid, pid, user));
+	uint16_t flags(options(argc, argv, hpid, pid, user));
 
 	if (flags & Version)
 	{
