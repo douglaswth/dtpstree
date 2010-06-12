@@ -454,7 +454,7 @@ private:
 			print << name();
 
 		bool _pid(flags_ & ShowPids), args(flags_ & Arguments);
-		bool change(flags_ & UidChanges && !root_ && parent_ && uid() != parent_->uid());
+		bool change(flags_ & UidChanges && (root_ ? !(flags_ & User) && uid() : parent_ && uid() != parent_->uid()));
 		bool parens((_pid || change) && !args);
 
 		if (parens)
