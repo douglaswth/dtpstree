@@ -224,9 +224,35 @@ public:
 		branches_.push_back(Branch(!(flags_ & Arguments) ? string.size() + 1 : 2));
 	}
 
-	inline void printArg(const std::string &string)
+	inline void printArg(const std::string &arg, bool last)
 	{
-		//std::printf(" %s", string.c_str());
+		if (max_)
+			return;
+
+		size_t width(arg.size() + 1);
+
+		width_ += width;
+
+		char *string;
+
+		if (maxWidth_ && !(flags_ & Long))
+			if (width_ > maxWidth_ || !last && width_ + 3 >= maxWidth_)
+			{
+				width -= width_ - maxWidth_;
+				width_ = maxWidth_;
+				max_ = true;
+
+				ssize_t size(static_cast<ssize_t>(width) - 4);
+
+				asprintf(&string, " %s...", size > 0 ? arg.substr(0, size).c_str() : "");
+			}
+			else
+				goto print;
+		else
+		print:
+			asprintf(&string, " %s", arg.c_str());
+
+		segments_.push_back(Segment(width, None, string));
 	}
 
 	inline void pop(bool children)
@@ -300,7 +326,7 @@ private:
 		if (maxWidth_ && !(flags_ & Long))
 			if (width_ > maxWidth_)
 			{
-				width -= (width_ - maxWidth_);
+				width -= width_ - maxWidth_;
 				width_ = maxWidth_;
 				max_ = true;
 
@@ -359,7 +385,7 @@ public:
 	inline pid_t parent() const { return proc_->ki_ppid; }
 	inline pid_t pid() const { return proc_->ki_pid; }
 
-	void child(Proc *proc)
+	inline void child(Proc *proc)
 	{
 		if (proc == this)
 			return;
@@ -370,7 +396,7 @@ public:
 		childrenByName_.insert(NameMap::value_type(proc->name(), proc));
 	}
 
-	void highlight()
+	inline void highlight()
 	{
 		highlight_ = true;
 
@@ -378,7 +404,7 @@ public:
 			parent_->highlight();
 	}
 
-	bool root(uid_t uid)
+	inline bool root(uid_t uid)
 	{
 		if (flags_ & User)
 		{
@@ -439,11 +465,13 @@ private:
 
 	void print(Tree &tree) const
 	{
+		bool titles(flags_ & ShowTitles);
+		char **argv(NULL);
 		std::ostringstream print;
 
-		if (flags_ & ShowTitles)
+		if (titles)
 		{
-			char **argv(kvm_getargv(kd_, proc_, 0));
+			argv = kvm_getargv(kd_, proc_, 0);
 
 			if (argv)
 				print << visual(*argv);
@@ -485,12 +513,12 @@ private:
 
 		if (args)
 		{
-			char **argv(kvm_getargv(kd_, proc_, 0));
-			std::ostringstream args;
+			if (!titles && !argv)
+				argv = kvm_getargv(kd_, proc_, 0);
 
 			if (argv && *argv)
 				for (++argv; *argv; ++argv)
-					tree.printArg(visual(*argv));
+					tree.printArg(visual(*argv), !*(argv + 1));
 
 			tree.done();
 		}
