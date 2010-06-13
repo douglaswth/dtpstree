@@ -265,6 +265,8 @@ public:
 
 	inline void done()
 	{
+		size_t last(segments_.size() - 1);
+
 		_foreach (std::vector<Segment>, segment, segments_)
 		{
 			const char *begin, *end;
@@ -272,8 +274,8 @@ public:
 			switch (segment->escape_)
 			{
 			case BoxDrawing:
-				begin = "\033(0\017";
-				end = "\033(B\017";
+				begin = !_index || (segment - 1)->escape_ != BoxDrawing ? "\033(0\017" : "";
+				end = _index == last || (segment + 1)->escape_ != BoxDrawing ? "\033(B\017" : "";
 				break;
 			case Bright:
 				begin = "\033[1m";
