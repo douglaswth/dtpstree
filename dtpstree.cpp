@@ -658,7 +658,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 		switch (option)
 		{
 		case 'a':
-			flags |= Arguments; break;
+			flags |= Arguments | Compact; break;
 		case 'A':
 			flags |= Ascii;
 			flags &= ~Vt100;
