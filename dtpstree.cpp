@@ -837,36 +837,41 @@ int main(int argc, char *argv[])
 				proc->printByName(tree);
 			}
 		}
-
-		return 0;
 	}
+	else
+	{
+		NameMap names;
 
-	NameMap names;
+		_foreach (PidMap, pid, pids)
+		{
+			Proc *proc(pid->second);
+
+			if (proc->root(uid))
+				switch (sort)
+				{
+				case PidSort:
+					proc->printByPid(tree);
+
+					break;
+				case NameSort:
+					names.insert(NameMap::value_type(proc->name(), proc));
+				}
+		}
+
+		switch (sort)
+		{
+		case NameSort:
+			_foreach (NameMap, name, names)
+				name->second->printByName(tree);
+		default:
+			break;
+		}
+	}
 
 	_foreach (PidMap, pid, pids)
-	{
-		Proc *proc(pid->second);
+		delete pid->second;
 
-		if (proc->root(uid))
-			switch (sort)
-			{
-			case PidSort:
-				proc->printByPid(tree);
-
-				break;
-			case NameSort:
-				names.insert(NameMap::value_type(proc->name(), proc));
-			}
-	}
-
-	switch (sort)
-	{
-	case NameSort:
-		_foreach (NameMap, name, names)
-			name->second->printByName(tree);
-	default:
-		return 0;
-	}
+	return 0;
 }
 
 // display a tree of processes
