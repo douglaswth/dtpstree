@@ -263,7 +263,7 @@ public:
 			done();
 	}
 
-	inline void done()
+	void done()
 	{
 		size_t last(segments_.size() - 1);
 
