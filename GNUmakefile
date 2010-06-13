@@ -19,7 +19,7 @@
 #  limitations under the License.
 
 CXXFLAGS ?= -g -O2
-CXXFLAGS += -Wall -Wno-long-long
+override CXXFLAGS += -Wall -Wno-long-long -Wno-parentheses
 LDLIBS := -lkvm -lncurses
 TARNAME := $(shell sed -e 's/^\#define DTPSTREE_PROGRAM "\(.*\)"$$/\1/p;d' dtpstree.cpp)-$(shell sed -e 's/^\#define DTPSTREE_VERSION "\(.*\)"$$/\1/p;d' dtpstree.cpp)
 PREFIX ?= /usr/local
