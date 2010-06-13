@@ -750,7 +750,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 
 int main(int argc, char *argv[])
 {
-	pid_t hpid(-1), pid(-1);
+	pid_t hpid(0), pid(0);
 	char *user(NULL);
 	uint16_t flags(options(argc, argv, hpid, pid, user));
 
@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	uid_t uid(-1);
+	uid_t uid(0);
 
 	if (flags & User)
 	{
