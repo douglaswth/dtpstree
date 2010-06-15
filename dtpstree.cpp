@@ -474,7 +474,28 @@ public:
 		size_t last(childrenByPid_.size() - 1);
 
 		_foreach (const PidMap, child, childrenByPid_)
-			child->second->printByPid(tree(!_index, _index == last));
+		{
+			Proc *proc(child->second);
+			bool l4st(_index + proc->duplicate_ >= last);
+
+			if (!l4st && proc->duplicate_)
+			{
+				l4st = true;
+
+				_forall (PidMap::const_iterator, ch1ld, (++child)--, childrenByPid_.end())
+					if (ch1ld->second->duplicate_ != 1)
+					{
+						l4st = false;
+
+						break;
+					}
+			}
+
+			proc->printByPid(tree(!_index, l4st));
+
+			if (l4st)
+				break;
+		}
 
 		tree.pop(children());
 	}
@@ -489,7 +510,15 @@ public:
 		size_t last(childrenByName_.size() - 1);
 
 		_foreach (const NameMap, child, childrenByName_)
-			child->second->printByName(tree(!_index, _index == last));
+		{
+			Proc *proc(child->second);
+			bool l4st(_index + proc->duplicate_ >= last);
+
+			proc->printByName(tree(!_index, l4st));
+
+			if (l4st)
+				break;
+		}
 
 		tree.pop(children());
 	}
