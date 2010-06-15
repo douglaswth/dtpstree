@@ -65,7 +65,7 @@ enum Flags
 {
 	Arguments	= 0x0001,
 	Ascii		= 0x0002,
-	Compact		= 0x0004,
+	NoCompact		= 0x0004,
 	Highlight	= 0x0008,
 	Vt100		= 0x0010,
 	ShowKernel	= 0x0020,
@@ -109,9 +109,10 @@ class Tree
 	std::vector<Segment> segments_;
 	std::vector<Branch> branches_;
 	bool first_, last_;
+	size_t duplicate_;
 
 public:
-	Tree(const uint16_t &flags) : flags_(flags), vt100_(false), maxWidth_(0), width_(0), max_(false), suppress_(false)
+	Tree(const uint16_t &flags) : flags_(flags), vt100_(false), maxWidth_(0), width_(0), max_(false), suppress_(false), duplicate_(0)
 	{
 		bool tty(isatty(1));
 
@@ -174,7 +175,7 @@ public:
 		}
 	}
 
-	void print(const std::string &string, bool highlight)
+	void print(const std::string &string, bool highlight, size_t duplicate)
 	{
 		Escape escape(vt100_ ? BoxDrawing : None);
 
@@ -219,9 +220,24 @@ public:
 			print(3, escape, "%lc%lc%lc", horizontal_, line, horizontal_);
 		}
 
+		size_t size(0);
+
+		if (duplicate)
+		{
+			std::ostringstream string;
+
+			string << duplicate << "*[";
+
+			size = string.str().size();
+
+			print(size, None, "%s", string.str().c_str());
+
+			++duplicate_;
+		}
+
 		print(string.size(), highlight ? Bright : None, "%s", string.c_str());
 
-		branches_.push_back(Branch(!(flags_ & Arguments) ? string.size() + 1 : 2));
+		branches_.push_back(Branch(!(flags_ & Arguments) ? size + string.size() + 1 : 2));
 	}
 
 	inline void printArg(const std::string &arg, bool last)
@@ -265,6 +281,13 @@ public:
 
 	void done()
 	{
+		if (duplicate_)
+		{
+			print(duplicate_, None, "%s", std::string(duplicate_, ']').c_str());
+
+			duplicate_ = 0;
+		}
+
 		size_t last(segments_.size() - 1);
 
 		_foreach (std::vector<Segment>, segment, segments_)
@@ -367,16 +390,18 @@ class Proc
 	const uint16_t &flags_;
 	kvm_t *kd_;
 	kinfo_proc *proc_;
-	mutable std::string name_;
+	mutable std::string name_, print_;
 	Proc *parent_;
 	PidMap childrenByPid_;
 	NameMap childrenByName_;
 	bool highlight_, root_;
+	int8_t compact_;
+	size_t duplicate_;
 
 public:
-	inline Proc(const uint16_t &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), parent_(NULL), highlight_(false), root_(false) {}
+	inline Proc(const uint16_t &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), parent_(NULL), highlight_(false), root_(false), compact_(-1), duplicate_(0) {}
 
-	inline std::string name() const
+	inline const std::string &name() const
 	{
 		if (name_.empty())
 			name_ = visual(proc_->ki_comm);
@@ -406,7 +431,15 @@ public:
 			parent_->highlight();
 	}
 
-	inline bool root(uid_t uid)
+	inline bool compact()
+	{
+		if (compact_ == -1)
+			compact_ = compact(childrenByName_);
+
+		return compact_;
+	}
+
+	bool root(uid_t uid)
 	{
 		if (flags_ & User)
 		{
@@ -433,6 +466,9 @@ public:
 
 	void printByPid(Tree &tree) const
 	{
+		if (duplicate_ == 1)
+			return;
+
 		print(tree);
 
 		size_t last(childrenByPid_.size() - 1);
@@ -445,6 +481,9 @@ public:
 
 	void printByName(Tree &tree) const
 	{
+		if (duplicate_ == 1)
+			return;
+
 		print(tree);
 
 		size_t last(childrenByName_.size() - 1);
@@ -453,6 +492,45 @@ public:
 			child->second->printByName(tree(!_index, _index == last));
 
 		tree.pop(children());
+	}
+
+	static bool compact(NameMap &names)
+	{
+		Proc *previous(NULL);
+		bool compact(true);
+
+		_foreach (NameMap, name, names)
+		{
+			Proc *proc(name->second);
+
+			if (proc->duplicate_)
+				continue;
+
+			size_t duplicate(proc->compact());
+
+			if (!(duplicate && (!previous || proc->print() == previous->print())))
+				compact = false;
+
+			previous = proc;
+
+			size_t count(names.count(name->first));
+
+			if (!duplicate || count == 1)
+				continue;
+
+			_forall(NameMap::iterator, n4me, (++name)--, names.upper_bound(name->first))
+			{
+				Proc *pr0c(n4me->second);
+
+				if (true)
+					duplicate += ++pr0c->duplicate_;
+			}
+
+			if (duplicate != 1)
+				proc->duplicate_ = duplicate;
+		}
+
+		return compact;
 	}
 
 private:
@@ -467,56 +545,11 @@ private:
 
 	void print(Tree &tree) const
 	{
-		bool titles(flags_ & ShowTitles);
-		char **argv(NULL);
-		std::ostringstream print;
+		tree.print(print(), highlight_, duplicate_);
 
-		if (titles)
+		if (flags_ & Arguments)
 		{
-			argv = kvm_getargv(kd_, proc_, 0);
-
-			if (argv)
-				print << visual(*argv);
-			else
-				print << name();
-		}
-		else
-			print << name();
-
-		bool _pid(flags_ & ShowPids), args(flags_ & Arguments);
-		bool change(flags_ & UidChanges && (root_ ? !(flags_ & User) && uid() : parent_ && uid() != parent_->uid()));
-		bool parens((_pid || change) && !args);
-
-		if (parens)
-			print << '(';
-
-		if (_pid)
-		{
-			if (!parens)
-				print << ',';
-
-			print << pid();
-		}
-
-		if (change)
-		{
-			if (!parens || _pid)
-				print << ',';
-
-			passwd *user(getpwuid(uid()));
-
-			print << user->pw_name;
-		}
-
-		if (parens)
-			print << ')';
-
-		tree.print(print.str(), highlight_);
-
-		if (args)
-		{
-			if (!titles && !argv)
-				argv = kvm_getargv(kd_, proc_, 0);
+			char **argv(kvm_getargv(kd_, proc_, 0));
 
 			if (argv && *argv)
 				for (++argv; *argv; ++argv)
@@ -526,7 +559,59 @@ private:
 		}
 	}
 
-	inline bool children() const { return childrenByPid_.size(); }
+	const std::string &print() const
+	{
+		if (print_.empty())
+		{
+			std::ostringstream print;
+
+			if (flags_ & ShowTitles)
+			{
+				char **argv(kvm_getargv(kd_, proc_, 0));
+
+				if (argv)
+					print << visual(*argv);
+				else
+					print << name();
+			}
+			else
+				print << name();
+
+			bool p1d(flags_ & ShowPids), args(flags_ & Arguments);
+			bool change(flags_ & UidChanges && (root_ ? !(flags_ & User) && uid() : parent_ && uid() != parent_->uid()));
+			bool parens((p1d || change) && !args);
+
+			if (parens)
+				print << '(';
+
+			if (p1d)
+			{
+				if (!parens)
+					print << ',';
+
+				print << pid();
+			}
+
+			if (change)
+			{
+				if (!parens || p1d)
+					print << ',';
+
+				passwd *user(getpwuid(uid()));
+
+				print << user->pw_name;
+			}
+
+			if (parens)
+				print << ')';
+
+			print_ = print.str();
+		}
+
+		return print_;
+	}
+
+	inline bool children() const { return childrenByName_.size(); }
 
 	inline uid_t uid() const { return proc_->ki_ruid; }
 };
@@ -556,6 +641,9 @@ static void help(const char *program, option options[], int code = 0)
 				goto argument;
 
 			break;
+		case 'c':
+			if (name != "no-compact")
+				continue;
 		default:
 			arguments << '-' << static_cast<char>(option->val) << ", ";
 		argument:
@@ -633,6 +721,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 		{ "arguments", no_argument, NULL, 'a' },
 		{ "ascii", no_argument, NULL, 'A' },
 		{ "compact", no_argument, NULL, 'c' },
+		{ "no-compact", no_argument, NULL, 'c' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "highlight", optional_argument, NULL, 'H' },
 		{ "highlight-all", no_argument, NULL, 'H' },
@@ -658,7 +747,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 		switch (option)
 		{
 		case 'a':
-			flags |= Arguments | Compact; break;
+			flags |= Arguments | NoCompact; break;
 		case 'A':
 			flags |= Ascii;
 			flags &= ~Vt100;
@@ -666,7 +755,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 
 			break;
 		case 'c':
-			flags |= Compact; break;
+			flags |= NoCompact; break;
 		case 'h':
 			help(program, options);
 		case 'H':
@@ -687,7 +776,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 		case 'n':
 			flags |= NumericSort; break;
 		case 'p':
-			flags |= Compact | ShowPids; break;
+			flags |= NoCompact | ShowPids; break;
 		case 't':
 			flags |= ShowTitles; break;
 		case 'u':
@@ -769,12 +858,12 @@ int main(int argc, char *argv[])
 	{
 		errno = 0;
 
-		passwd *_user(getpwnam(user));
+		passwd *us3r(getpwnam(user));
 
-		if (!_user)
+		if (!us3r)
 			errno ? err(1, NULL) : errx(1, "Unknown user: \"%s\"", user);
 
-		uid = _user->pw_uid;
+		uid = us3r->pw_uid;
 	}
 
 	char error[_POSIX2_LINE_MAX];
@@ -820,11 +909,14 @@ int main(int argc, char *argv[])
 
 	if (flags & Pid)
 	{
-		PidMap::iterator _pid(pids.find(pid));
+		PidMap::iterator p1d(pids.find(pid));
 
-		if (_pid != pids.end())
+		if (p1d != pids.end())
 		{
-			Proc *proc(_pid->second);
+			Proc *proc(p1d->second);
+
+			if (!(flags & NoCompact))
+				proc->compact();
 
 			switch (sort)
 			{
@@ -832,7 +924,6 @@ int main(int argc, char *argv[])
 				proc->printByPid(tree);
 
 				break;
-
 			case NameSort:
 				proc->printByName(tree);
 			}
@@ -847,24 +938,27 @@ int main(int argc, char *argv[])
 			Proc *proc(pid->second);
 
 			if (proc->root(uid))
-				switch (sort)
-				{
-				case PidSort:
-					proc->printByPid(tree);
-
-					break;
-				case NameSort:
-					names.insert(NameMap::value_type(proc->name(), proc));
-				}
+				names.insert(NameMap::value_type(proc->name(), proc));
 		}
+
+		if (!(flags & NoCompact))
+			Proc::compact(names);
 
 		switch (sort)
 		{
+		case PidSort:
+			_foreach (PidMap, pid, pids)
+			{
+				Proc *proc(pid->second);
+
+				if (proc->root(uid))
+					proc->printByPid(tree);
+			}
+
+			break;
 		case NameSort:
 			_foreach (NameMap, name, names)
 				name->second->printByName(tree);
-		default:
-			break;
 		}
 	}
 
