@@ -508,10 +508,10 @@ public:
 
 			size_t duplicate(proc->compact());
 
-			if (!(duplicate && (!previous || proc->print() == previous->print())))
+			if (compact && duplicate && (!previous || proc->print() == previous->print()))
+				previous = proc;
+			else
 				compact = false;
-
-			previous = proc;
 
 			size_t count(names.count(name->first));
 
