@@ -845,7 +845,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 
 	_forall (int, index, optind, argc)
 	{
-		bool success;
+		bool success(false);
 
 		optarg = argv[index];
 		pid = value<pid_t, 0, INT_MAX>(program, options, &success);
