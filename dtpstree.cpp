@@ -466,61 +466,12 @@ public:
 
 	void printByPid(Tree &tree) const
 	{
-		if (duplicate_ == 1)
-			return;
-
-		print(tree);
-
-		size_t last(childrenByPid_.size() - 1);
-
-		_foreach (const PidMap, child, childrenByPid_)
-		{
-			Proc *proc(child->second);
-			bool l4st(_index + proc->duplicate_ >= last);
-
-			if (!l4st && proc->duplicate_)
-			{
-				l4st = true;
-
-				_forall (PidMap::const_iterator, ch1ld, (++child)--, childrenByPid_.end())
-					if (ch1ld->second->duplicate_ != 1)
-					{
-						l4st = false;
-
-						break;
-					}
-			}
-
-			proc->printByPid(tree(!_index, l4st));
-
-			if (l4st)
-				break;
-		}
-
-		tree.pop(children());
+		print(tree, childrenByPid_);
 	}
 
 	void printByName(Tree &tree) const
 	{
-		if (duplicate_ == 1)
-			return;
-
-		print(tree);
-
-		size_t last(childrenByName_.size() - 1);
-
-		_foreach (const NameMap, child, childrenByName_)
-		{
-			Proc *proc(child->second);
-			bool l4st(_index + proc->duplicate_ >= last);
-
-			proc->printByName(tree(!_index, l4st));
-
-			if (l4st)
-				break;
-		}
-
-		tree.pop(children());
+		print(tree, childrenByName_);
 	}
 
 	static bool compact(NameMap &names)
@@ -570,6 +521,45 @@ private:
 		visual.resize(strvis(const_cast<char *>(visual.data()), string, VIS_TAB | VIS_NL | VIS_NOSLASH));
 
 		return visual;
+	}
+
+	template <typename Type>
+	void print(Tree &tree, const Type &children) const
+	{
+		if (duplicate_ == 1)
+			return;
+
+		print(tree);
+
+		size_t size(children.size()), last(size - 1);
+
+		_tforeach (const Type, child, children)
+		{
+			Proc *proc(child->second);
+			bool l4st(_index + (proc->duplicate_ ? proc->duplicate_ - 1 : 0) == last);
+
+			if (!l4st)
+			{
+				l4st = true;
+
+				for (++child; child != _end; ++child)
+					if (child->second->duplicate_ != 1)
+					{
+						l4st = false;
+
+						break;
+					}
+
+				--child;
+			}
+
+			proc->print(tree(!_index, l4st), proc->children<Type>());
+
+			if (l4st)
+				break;
+		}
+
+		tree.pop(size);
 	}
 
 	void print(Tree &tree) const
@@ -641,6 +631,10 @@ private:
 	}
 
 	inline uid_t uid() const { return proc_->ki_ruid; }
+
+	template <typename Type>
+	inline const Type &children() const;
+
 	inline bool children() const { return childrenByName_.size(); }
 	inline Proc *child() const { return childrenByName_.begin()->second; }
 
@@ -661,6 +655,18 @@ private:
 		return true;
 	}
 };
+
+template <>
+inline const PidMap &Proc::children() const
+{
+	return childrenByPid_;
+}
+
+template <>
+inline const NameMap &Proc::children() const
+{
+	return childrenByName_;
+}
 
 static void help(const char *program, option options[], int code = 0)
 {
