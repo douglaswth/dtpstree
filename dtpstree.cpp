@@ -464,12 +464,12 @@ public:
 		return root_ = !parent_;
 	}
 
-	void printByPid(Tree &tree) const
+	inline void printByPid(Tree &tree) const
 	{
 		print(tree, childrenByPid_);
 	}
 
-	void printByName(Tree &tree) const
+	inline void printByName(Tree &tree) const
 	{
 		print(tree, childrenByName_);
 	}
