@@ -551,7 +551,7 @@ public:
 			{
 				Proc *pr0c(n4me->second);
 
-				if (true)
+				if (pr0c->compact() && Proc::compact(proc, pr0c))
 					duplicate += ++pr0c->duplicate_;
 			}
 
@@ -640,9 +640,26 @@ private:
 		return print_;
 	}
 
-	inline bool children() const { return childrenByName_.size(); }
-
 	inline uid_t uid() const { return proc_->ki_ruid; }
+	inline bool children() const { return childrenByName_.size(); }
+	inline Proc *child() const { return childrenByName_.begin()->second; }
+
+	inline static bool compact(Proc *one, Proc *two)
+	{
+		if (one->print() != two->print())
+			return false;
+
+		if (one->children() != two->children())
+			return false;
+
+		if (one->children() && !compact(one->child(), two->child()))
+			return false;
+
+		if (two->highlight_)
+			one->highlight_ = true;
+
+		return true;
+	}
 };
 
 static void help(const char *program, option options[], int code = 0)
