@@ -41,7 +41,7 @@ dist: man
 
 install: all
 	install -dv $(DESTDIR)$(BINDIR) $(DESTDIR)$(MAN1DIR)
-	install -cv dtpstree $(DESTDIR)$(BINDIR)
+	install -csv dtpstree $(DESTDIR)$(BINDIR)
 	install -cm 644 -v man1/dtpstree.1 $(DESTDIR)$(MAN1DIR)
 
 uninstall:
