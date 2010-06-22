@@ -664,7 +664,7 @@ private:
 				--child;
 			}
 
-			proc->print(tree(!_index, l4st), proc->children<Map>());
+			proc->print(tree(!_index, l4st), proc->template children<Map>());
 
 			if (l4st)
 				break;
