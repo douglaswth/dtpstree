@@ -88,6 +88,10 @@ typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
 
+#ifndef KERN_PROC_PROC
+#define KERN_PROC_PROC KERN_PROC_ALL
+#endif
+
 template <>
 inline kinfo_proc *getprocs(kvm_t *kd, int &count)
 {
