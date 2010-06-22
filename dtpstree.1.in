@@ -1,8 +1,9 @@
 [DESCRIPTION]
 .B dtpstree
 shows running processes as a tree. It is a reimplementation of \fBpstree\fR from
-\fIPSmisc\fR for FreeBSD. It also works without \fI/proc\fR and will show the
-full set of processes in a jail even if \fBinit\fR is not present.
+\fIPSmisc\fR for FreeBSD, NetBSD, and OpenBSD. It also works without \fI/proc\fR
+and will show the full set of processes in a jail even if \fBinit\fR is not
+present.
 [AUTHOR]
 Written by \fBDouglas Thrift\fR <\fIdouglas@douglasthrift.net\fR>.
 [SEE ALSO]

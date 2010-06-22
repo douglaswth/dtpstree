@@ -27,6 +27,12 @@ BINDIR ?= $(PREFIX)/bin
 MANDIR ?= $(PREFIX)/man
 MAN1DIR ?= $(MANDIR)/man1
 
+ifneq ($(shell which realpath),)
+REALPATH := realpath
+else
+REALPATH := readlink -f
+endif
+
 .PHONY: all man dist install uninstall clean
 
 all: dtpstree
@@ -34,7 +40,7 @@ all: dtpstree
 man: man1/dtpstree.1
 
 man1/%.1: % %.1.in
-	help2man -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell realpath $<)
+	help2man -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell $(REALPATH) $<)
 
 dist: man
 	bsdtar -cf $(TARNAME).tar.bz2 -js '/^\./$(TARNAME)/' -vX .gitignore --exclude='.git*' .

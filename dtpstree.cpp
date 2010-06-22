@@ -60,7 +60,7 @@
 #include "foreach.hpp"
 
 #define DTPSTREE_PROGRAM "dtpstree"
-#define DTPSTREE_VERSION "1.0.1"
+#define DTPSTREE_VERSION "1.0.2"
 
 namespace kvm
 {
@@ -83,7 +83,7 @@ inline uid_t ruid(Type *proc);
 template <typename Type>
 inline char *comm(Type *proc);
 
-#ifndef __NetBSD__
+#if !defined(__NetBSD__) && !defined(__OpenBSD__)
 typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
