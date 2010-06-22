@@ -84,7 +84,7 @@ template <typename Type>
 inline char *comm(Type *proc);
 
 #ifndef __NetBSD__
-typename kinfo_proc Proc;
+typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
 
@@ -768,13 +768,13 @@ private:
 };
 
 template <> template <>
-inline const Proc<kvm::Proc>::PidMap &Proc<kinfo_proc2>::children() const
+inline const Proc<kvm::Proc>::PidMap &Proc<kvm::Proc>::children() const
 {
 	return childrenByPid_;
 }
 
 template <> template <>
-inline const Proc<kvm::Proc>::NameMap &Proc<kinfo_proc2>::children() const
+inline const Proc<kvm::Proc>::NameMap &Proc<kvm::Proc>::children() const
 {
 	return childrenByName_;
 }
