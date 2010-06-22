@@ -38,7 +38,14 @@
 #include <libgen.h>
 #endif
 
+#ifdef __NetBSD__
+#include <ncurses/curses.h>
+#include <ncurses/term.h>
+#else
 #include <curses.h>
+#include <term.h>
+#endif
+
 #include <err.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -48,7 +55,6 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
-#include <term.h>
 #include <vis.h>
 
 #include "foreach.hpp"
@@ -56,10 +62,110 @@
 #define DTPSTREE_PROGRAM "dtpstree"
 #define DTPSTREE_VERSION "1.0.1"
 
-class Proc;
+namespace kvm
+{
 
-typedef std::map<pid_t, Proc *> PidMap;
-typedef std::multimap<std::string, Proc *> NameMap;
+template <typename Type>
+inline Type *getprocs(kvm_t *kd, int &count);
+
+template <typename Type>
+inline char **getargv(kvm_t *kd, const Type *proc);
+
+template <typename Type>
+inline pid_t pid(Type *proc);
+
+template <typename Type>
+inline pid_t ppid(Type *proc);
+
+template <typename Type>
+inline uid_t ruid(Type *proc);
+
+template <typename Type>
+inline char *comm(Type *proc);
+
+#ifndef __NetBSD__
+typename kinfo_proc Proc;
+
+const int Flags(O_RDONLY);
+
+template <>
+inline kinfo_proc *getprocs(kvm_t *kd, int &count)
+{
+	return kvm_getprocs(kd, KERN_PROC_PROC, 0, &count);
+}
+
+template <>
+inline char **getargv(kvm_t *kd, const kinfo_proc *proc)
+{
+	return kvm_getargv(kd, proc, 0);
+}
+
+template <>
+inline pid_t pid(kinfo_proc *proc)
+{
+	return proc->ki_pid;
+}
+
+template <>
+inline pid_t ppid(kinfo_proc *proc)
+{
+	return proc->ki_ppid;
+}
+
+template <>
+inline uid_t ruid(kinfo_proc *proc)
+{
+	return proc->ki_ruid;
+}
+
+template <>
+inline char *comm(kinfo_proc *proc)
+{
+	return proc->ki_comm;
+}
+#else
+typedef kinfo_proc2 Proc;
+
+const int Flags(KVM_NO_FILES);
+
+template <>
+inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
+{
+	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
+}
+
+template <>
+inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
+{
+	return kvm_getargv2(kd, proc, 0);
+}
+
+template <>
+inline pid_t pid(kinfo_proc2 *proc)
+{
+	return proc->p_pid;
+}
+
+template <>
+inline pid_t ppid(kinfo_proc2 *proc)
+{
+	return proc->p_ppid;
+}
+
+template <>
+inline uid_t ruid(kinfo_proc2 *proc)
+{
+	return proc->p_ruid;
+}
+
+template <>
+inline char *comm(kinfo_proc2 *proc)
+{
+	return proc->p_comm;
+}
+#endif
+
+}
 
 enum Flags
 {
@@ -165,9 +271,9 @@ public:
 
 			if (setupterm(NULL, 1, &code) == OK)
 			{
-				maxWidth_ = tigetnum("cols");
+				maxWidth_ = tigetnum(const_cast<char *>("cols"));
 
-				if (tigetflag("am") && !tigetflag("xenl"))
+				if (tigetflag(const_cast<char *>("am")) && !tigetflag(const_cast<char *>("xenl")))
 					suppress_ = true;
 			}
 			else
@@ -385,13 +491,18 @@ private:
 	}
 };
 
-class Proc
+template <typename Type>
+struct Proc
 {
+	typedef std::map<pid_t, Proc<Type> *> PidMap;
+	typedef std::multimap<std::string, Proc<Type> *> NameMap;
+
+private:
 	const uint16_t &flags_;
 	kvm_t *kd_;
-	kinfo_proc *proc_;
+	Type *proc_;
 	mutable std::string name_, print_;
-	Proc *parent_;
+	Proc<Type> *parent_;
 	PidMap childrenByPid_;
 	NameMap childrenByName_;
 	bool highlight_, root_;
@@ -399,18 +510,18 @@ class Proc
 	size_t duplicate_;
 
 public:
-	inline Proc(const uint16_t &flags, kvm_t *kd, kinfo_proc *proc) : flags_(flags), kd_(kd), proc_(proc), parent_(NULL), highlight_(false), root_(false), compact_(-1), duplicate_(0) {}
+	inline Proc(const uint16_t &flags, kvm_t *kd, Type *proc) : flags_(flags), kd_(kd), proc_(proc), parent_(NULL), highlight_(false), root_(false), compact_(-1), duplicate_(0) {}
 
 	inline const std::string &name() const
 	{
 		if (name_.empty())
-			name_ = visual(proc_->ki_comm);
+			name_ = visual(kvm::comm(proc_));
 
 		return name_;
 	}
 
-	inline pid_t parent() const { return proc_->ki_ppid; }
-	inline pid_t pid() const { return proc_->ki_pid; }
+	inline pid_t parent() const { return kvm::ppid(proc_); }
+	inline pid_t pid() const { return kvm::pid(proc_); }
 
 	inline void child(Proc *proc)
 	{
@@ -420,7 +531,7 @@ public:
 		proc->parent_ = this;
 		childrenByPid_[proc->pid()] = proc;
 
-		childrenByName_.insert(NameMap::value_type(proc->name(), proc));
+		childrenByName_.insert(typename NameMap::value_type(proc->name(), proc));
 	}
 
 	inline void highlight()
@@ -479,7 +590,7 @@ public:
 		Proc *previous(NULL);
 		bool compact(true);
 
-		_foreach (NameMap, name, names)
+		_tforeach (NameMap, name, names)
 		{
 			Proc *proc(name->second);
 
@@ -498,7 +609,7 @@ public:
 			if (!duplicate || count == 1)
 				continue;
 
-			_forall(NameMap::iterator, n4me, (++name)--, names.upper_bound(name->first))
+			_forall(typename NameMap::iterator, n4me, (++name)--, names.upper_bound(name->first))
 			{
 				Proc *pr0c(n4me->second);
 
@@ -523,8 +634,8 @@ private:
 		return visual;
 	}
 
-	template <typename Type>
-	void print(Tree &tree, const Type &children) const
+	template <typename Map>
+	void print(Tree &tree, const Map &children) const
 	{
 		if (duplicate_ == 1)
 			return;
@@ -533,9 +644,9 @@ private:
 
 		size_t size(children.size()), last(size - 1);
 
-		_tforeach (const Type, child, children)
+		_tforeach (const Map, child, children)
 		{
-			Proc *proc(child->second);
+			Proc<Type> *proc(child->second);
 			bool l4st(_index + (proc->duplicate_ ? proc->duplicate_ - 1 : 0) == last);
 
 			if (!l4st)
@@ -553,7 +664,7 @@ private:
 				--child;
 			}
 
-			proc->print(tree(!_index, l4st), proc->children<Type>());
+			proc->print(tree(!_index, l4st), proc->children<Map>());
 
 			if (l4st)
 				break;
@@ -568,7 +679,7 @@ private:
 
 		if (flags_ & Arguments)
 		{
-			char **argv(kvm_getargv(kd_, proc_, 0));
+			char **argv(kvm::getargv(kd_, proc_));
 
 			if (argv && *argv)
 				for (++argv; *argv; ++argv)
@@ -586,7 +697,7 @@ private:
 
 			if (flags_ & ShowTitles)
 			{
-				char **argv(kvm_getargv(kd_, proc_, 0));
+				char **argv(kvm::getargv(kd_, proc_));
 
 				if (argv)
 					print << visual(*argv);
@@ -630,23 +741,23 @@ private:
 		return print_;
 	}
 
-	inline uid_t uid() const { return proc_->ki_ruid; }
+	inline uid_t uid() const { return kvm::ruid(proc_); }
 
-	template <typename Type>
-	inline const Type &children() const;
+	template <typename Map>
+	inline const Map &children() const;
 
-	inline bool children() const { return childrenByName_.size(); }
-	inline Proc *child() const { return childrenByName_.begin()->second; }
+	inline bool hasChildren() const { return childrenByName_.size(); }
+	inline Proc<Type> *child() const { return childrenByName_.begin()->second; }
 
-	inline static bool compact(Proc *one, Proc *two)
+	inline static bool compact(Proc<Type> *one, Proc<Type> *two)
 	{
 		if (one->print() != two->print())
 			return false;
 
-		if (one->children() != two->children())
+		if (one->hasChildren() != two->hasChildren())
 			return false;
 
-		if (one->children() && !compact(one->child(), two->child()))
+		if (one->hasChildren() && !compact(one->child(), two->child()))
 			return false;
 
 		if (two->highlight_)
@@ -656,19 +767,19 @@ private:
 	}
 };
 
-template <>
-inline const PidMap &Proc::children() const
+template <> template <>
+inline const Proc<kvm::Proc>::PidMap &Proc<kinfo_proc2>::children() const
 {
 	return childrenByPid_;
 }
 
-template <>
-inline const NameMap &Proc::children() const
+template <> template <>
+inline const Proc<kvm::Proc>::NameMap &Proc<kinfo_proc2>::children() const
 {
 	return childrenByName_;
 }
 
-static void help(const char *program, option options[], int code = 0)
+static void help(char *program, option options[], int code = 0)
 {
 	std::printf("Usage: %s [options] [PID|USER]\n\nOptions:\n", basename(program));
 
@@ -747,20 +858,32 @@ static void help(const char *program, option options[], int code = 0)
 	std::exit(code);
 }
 
-template <typename Type, long long minimum, long long maximum>
+template <typename Type, long minimum, long maximum>
 static Type value(char *program, option options[], bool *success = NULL)
 {
-	const char *error;
-	long long value(strtonum(optarg, minimum, maximum, &error));
+	char *end;
+	long value(std::strtol(optarg, &end, 0));
 
-	if (error)
-		if (success && errno == EINVAL)
+	errno = 0;
+
+	if (optarg == end || *end != '\0')
+		if (success)
 			*success = false;
 		else
 		{
-			warnx("Number is %s: \"%s\"", error, optarg);
+			warnx("Number is invalid: \"%s\"", optarg);
 			help(program, options, 1);
 		}
+	else if (value < minimum || value == LONG_MIN && errno == ERANGE)
+	{
+		warnx("Number is too small: \"%s\"", optarg);
+		help(program, options, 1);
+	}
+	else if (value > maximum || value == LONG_MAX && errno == ERANGE)
+	{
+		warnx("Number is too large: \"%s\"", optarg);
+		help(program, options, 1);
+	}
 	else if (success)
 		*success = true;
 
@@ -891,6 +1014,108 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 	return flags;
 }
 
+template <typename Type, int Flags>
+static void tree(pid_t hpid, pid_t pid, uint16_t flags, uid_t uid)
+{
+	char error[_POSIX2_LINE_MAX];
+	kvm_t *kd(kvm_openfiles(NULL, _PATH_DEVNULL, NULL, Flags, error));
+
+	if (!kd)
+		errx(1, "%s", error);
+
+	int count;
+	Type *procs(kvm::getprocs<Type>(kd, count));
+
+	if (!procs)
+		errx(1, "%s", kvm_geterr(kd));
+
+	typedef Type *Pointer;
+	typename Proc<Type>::PidMap pids;
+
+	_forall (Pointer, proc, procs, procs + count)
+		if (flags & ShowKernel || kvm::ppid(proc) != 0 || kvm::pid(proc) == 1)
+			pids[kvm::pid(proc)] = new Proc<Type>(flags, kd, proc);
+
+	enum { PidSort, NameSort } sort(flags & NumericSort ? PidSort : NameSort);
+
+	_tforeach (typename Proc<Type>::PidMap, pid, pids)
+	{
+		Proc<Type> *proc(pid->second);
+		typename Proc<Type>::PidMap::iterator parent(pids.find(proc->parent()));
+
+		if (parent != pids.end())
+			parent->second->child(proc);
+	}
+
+	if (flags & Highlight)
+	{
+		typename Proc<Type>::PidMap::iterator pid(pids.find(hpid));
+
+		if (pid != pids.end())
+			pid->second->highlight();
+	}
+
+	Tree tree(flags);
+
+	if (flags & Pid)
+	{
+		typename Proc<Type>::PidMap::iterator p1d(pids.find(pid));
+
+		if (p1d != pids.end())
+		{
+			Proc<Type> *proc(p1d->second);
+
+			if (!(flags & NoCompact))
+				proc->compact();
+
+			switch (sort)
+			{
+			case PidSort:
+				proc->printByPid(tree);
+
+				break;
+			case NameSort:
+				proc->printByName(tree);
+			}
+		}
+	}
+	else
+	{
+		typename Proc<Type>::NameMap names;
+
+		_tforeach (typename Proc<Type>::PidMap, pid, pids)
+		{
+			Proc<Type> *proc(pid->second);
+
+			if (proc->root(uid))
+				names.insert(typename Proc<Type>::NameMap::value_type(proc->name(), proc));
+		}
+
+		if (!(flags & NoCompact))
+			Proc<Type>::compact(names);
+
+		switch (sort)
+		{
+		case PidSort:
+			_tforeach (typename Proc<Type>::PidMap, pid, pids)
+			{
+				Proc<Type> *proc(pid->second);
+
+				if (proc->root(uid))
+					proc->printByPid(tree);
+			}
+
+			break;
+		case NameSort:
+			_tforeach (typename Proc<Type>::NameMap, name, names)
+				name->second->printByName(tree);
+		}
+	}
+
+	_tforeach (typename Proc<Type>::PidMap, pid, pids)
+		delete pid->second;
+}
+
 int main(int argc, char *argv[])
 {
 	pid_t hpid(0), pid(0);
@@ -918,104 +1143,7 @@ int main(int argc, char *argv[])
 		uid = us3r->pw_uid;
 	}
 
-	char error[_POSIX2_LINE_MAX];
-	kvm_t *kd(kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, error));
-
-	if (!kd)
-		errx(1, "%s", error);
-
-	typedef kinfo_proc *InfoProc;
-
-	int count;
-	InfoProc procs(kvm_getprocs(kd, KERN_PROC_PROC, 0, &count));
-
-	if (!procs)
-		errx(1, "%s", kvm_geterr(kd));
-
-	PidMap pids;
-
-	_forall (InfoProc, proc, procs, procs + count)
-		if (flags & ShowKernel || proc->ki_ppid != 0 || proc->ki_pid == 1)
-			pids[proc->ki_pid] = new Proc(flags, kd, proc);
-
-	enum { PidSort, NameSort } sort(flags & NumericSort ? PidSort : NameSort);
-
-	_foreach (PidMap, pid, pids)
-	{
-		Proc *proc(pid->second);
-		PidMap::iterator parent(pids.find(proc->parent()));
-
-		if (parent != pids.end())
-			parent->second->child(proc);
-	}
-
-	if (flags & Highlight)
-	{
-		PidMap::iterator pid(pids.find(hpid));
-
-		if (pid != pids.end())
-			pid->second->highlight();
-	}
-
-	Tree tree(flags);
-
-	if (flags & Pid)
-	{
-		PidMap::iterator p1d(pids.find(pid));
-
-		if (p1d != pids.end())
-		{
-			Proc *proc(p1d->second);
-
-			if (!(flags & NoCompact))
-				proc->compact();
-
-			switch (sort)
-			{
-			case PidSort:
-				proc->printByPid(tree);
-
-				break;
-			case NameSort:
-				proc->printByName(tree);
-			}
-		}
-	}
-	else
-	{
-		NameMap names;
-
-		_foreach (PidMap, pid, pids)
-		{
-			Proc *proc(pid->second);
-
-			if (proc->root(uid))
-				names.insert(NameMap::value_type(proc->name(), proc));
-		}
-
-		if (!(flags & NoCompact))
-			Proc::compact(names);
-
-		switch (sort)
-		{
-		case PidSort:
-			_foreach (PidMap, pid, pids)
-			{
-				Proc *proc(pid->second);
-
-				if (proc->root(uid))
-					proc->printByPid(tree);
-			}
-
-			break;
-		case NameSort:
-			_foreach (NameMap, name, names)
-				name->second->printByName(tree);
-		}
-	}
-
-	_foreach (PidMap, pid, pids)
-		delete pid->second;
+	tree<kvm::Proc, kvm::Flags>(hpid, pid, flags, uid);
 
 	return 0;
 }
