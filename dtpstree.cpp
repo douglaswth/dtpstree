@@ -39,8 +39,9 @@
 #endif
 
 #ifdef __NetBSD__
-#include <ncurses/curses.h>
-#include <ncurses/term.h>
+//#include <ncurses/curses.h>
+//#include <ncurses/term.h>
+#include <termcap.h>
 #else
 #include <curses.h>
 #include <term.h>
@@ -271,6 +272,7 @@ public:
 
 		if (!(flags & Long) && tty)
 		{
+#			ifndef __NetBSD__
 			int code;
 
 			if (setupterm(NULL, 1, &code) == OK)
@@ -280,6 +282,17 @@ public:
 				if (tigetflag(const_cast<char *>("am")) && !tigetflag(const_cast<char *>("xenl")))
 					suppress_ = true;
 			}
+#			else
+			char buffer[1024], *term(std::getenv("TERM"));
+
+			if (term != NULL && tgetent(buffer, term) == 1)
+			{
+				maxWidth_ = tgetnum("co");
+
+				if (tgetflag("am") && !tgetflag("xn"))
+					suppress_ = true;
+			}
+#			endif
 			else
 				maxWidth_ = 80;
 		}
