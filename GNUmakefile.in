@@ -1,0 +1,99 @@
+# DT PS Tree
+#
+# Douglas Thrift
+#
+# @configure_input@
+
+#  Copyright 2010 Douglas Thrift
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+VPATH := @srcdir@
+
+srcdir := @srcdir@
+top_builddir := @top_builddir@
+
+CPPFLAGS := @CPPFLAGS@
+CXX := @CXX@
+CXXFLAGS := @CXXFLAGS@ -Wall -Wno-long-long -Wno-parentheses
+LDFLAGS := @LDFLAGS@
+LDLIBS := @LIBS@
+
+PACKAGE_TARNAME := @PACKAGE_TARNAME@
+PACKAGE_VERSION := @PACKAGE_VERSION@
+TARNAME := $(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+
+INSTALL := @INSTALL@
+INSTALL_PROGRAM := @INSTALL_PROGRAM@
+INSTALL_DATA := @INSTALL_DATA@
+
+HELP2MAN := @HELP2MAN@
+REALPATH := @REALPATH@
+BSDTAR := @BSDTAR@
+
+prefix := @prefix@
+exec_prefix := @exec_prefix@
+bindir := @bindir@
+sbindir := @sbindir@
+libexecdir := @libexecdir@
+datarootdir := @datarootdir@
+datadir := @datadir@
+sysconfdir := @sysconfdir@
+sharedstatedir := @sharedstatedir@
+localstatedir := @localstatedir@
+includedir := @includedir@
+oldincludedir := @oldincludedir@
+docdir := @docdir@
+infodir := @infodir@
+htmldir := @htmldir@
+dvidir := @dvidir@
+pdfdir := @pdfdir@
+psdir := @psdir@
+libdir := @libdir@
+localedir := @localedir@
+mandir := @mandir@
+man1dir := ${mandir}/man1
+
+.PHONY: all man dist install uninstall clean distclean
+
+all: dtpstree
+
+ifneq ($(HELP2MAN),:)
+ifneq ($(REALPATH),:)
+man: $(srcdir)/man1/dtpstree.1
+
+$(srcdir)/man1/%.1: % %.1.in
+	$(HELP2MAN) -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell $(REALPATH) $<)
+endif
+endif
+
+ifneq ($(BSDTAR),:)
+dist: man
+	$(BSDTAR) -cf $(TARNAME).tar.bz2 -js '/^\./$(TARNAME)/' -vX .gitignore --exclude='.git*' .
+	$(BSDTAR) -cf $(TARNAME).tar.xz -Js '/^\./$(TARNAME)/' -vX .gitignore --exclude='.git*' .
+endif
+
+install: all
+	$(INSTALL) -dv $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
+	$(INSTALL_PROGRAM) -sv dtpstree $(DESTDIR)$(bindir)
+	$(INSTALL_DATA) -v $(srcdir)/man1/dtpstree.1 $(DESTDIR)$(man1dir)
+
+uninstall:
+	rm -fv $(DESTDIR)$(bindir)/dtpstree
+	rm -fv $(DESTDIR)$(man1dir)/dtpstree.1
+
+clean:
+	rm -fv dtpstree $(wildcard *core)
+
+distclean: clean
+	rm -fv GNUmakefile Makefile config.log config.status
