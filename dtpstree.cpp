@@ -38,10 +38,12 @@
 #include <libgen.h>
 #endif
 
-#ifdef __NetBSD__
+#ifdef HAVE_TERMCAP_H
+#include <termcap.h>
+#elif defined(HAVE_NCURSES_TERM_H)
 #include <ncurses/curses.h>
 #include <ncurses/term.h>
-#else
+#elif defined(HAVE_TERM_H)
 #include <curses.h>
 #include <term.h>
 #endif
@@ -59,9 +61,6 @@
 #include <vis.h>
 
 #include "foreach.hpp"
-
-#define DTPSTREE_PROGRAM "dtpstree"
-#define DTPSTREE_VERSION "1.0.2"
 
 namespace kvm
 {
@@ -84,14 +83,10 @@ inline uid_t ruid(Type *proc);
 template <typename Type>
 inline char *comm(Type *proc);
 
-#if !defined(__NetBSD__) && !defined(__OpenBSD__)
+#ifndef HAVE_STRUCT_KINFO_PROC2
 typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
-
-#ifndef KERN_PROC_PROC
-#define KERN_PROC_PROC KERN_PROC_ALL
-#endif
 
 template <>
 inline kinfo_proc *getprocs(kvm_t *kd, int &count)
@@ -104,6 +99,23 @@ inline char **getargv(kvm_t *kd, const kinfo_proc *proc)
 {
 	return kvm_getargv(kd, proc, 0);
 }
+#else
+typedef kinfo_proc2 Proc;
+
+const int Flags(KVM_NO_FILES);
+
+template <>
+inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
+{
+	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
+}
+
+template <>
+inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
+{
+	return kvm_getargv2(kd, proc, 0);
+}
+#endif
 
 template <>
 inline pid_t pid(kinfo_proc *proc)
@@ -127,22 +139,6 @@ template <>
 inline char *comm(kinfo_proc *proc)
 {
 	return proc->ki_comm;
-}
-#else
-typedef kinfo_proc2 Proc;
-
-const int Flags(KVM_NO_FILES);
-
-template <>
-inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
-{
-	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
-}
-
-template <>
-inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
-{
-	return kvm_getargv2(kd, proc, 0);
 }
 
 template <>
@@ -168,7 +164,6 @@ inline char *comm(kinfo_proc2 *proc)
 {
 	return proc->p_comm;
 }
-#endif
 
 }
 
@@ -271,6 +266,7 @@ public:
 
 		if (!(flags & Long) && tty)
 		{
+#			ifndef HAVE_TERMCAP_H
 			int code;
 
 			if (setupterm(NULL, 1, &code) == OK)
@@ -280,6 +276,17 @@ public:
 				if (tigetflag(const_cast<char *>("am")) && !tigetflag(const_cast<char *>("xenl")))
 					suppress_ = true;
 			}
+#			else
+			char buffer[1024], *term(std::getenv("TERM"));
+
+			if (term != NULL && tgetent(buffer, term) == 1)
+			{
+				maxWidth_ = tgetnum("co");
+
+				if (tgetflag("am") && !tgetflag("xn"))
+					suppress_ = true;
+			}
+#			endif
 			else
 				maxWidth_ = 80;
 		}
@@ -973,7 +980,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 				if (uname(&name))
 					err(1, NULL);
 
-				std::printf(DTPSTREE_PROGRAM " " DTPSTREE_VERSION " - %s %s %s\n", name.sysname, name.release, name.machine);
+				std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION " - %s %s %s\n", name.sysname, name.release, name.machine);
 				std::exit(0);
 			}
 		case 0:
