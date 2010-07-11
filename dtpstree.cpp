@@ -175,7 +175,7 @@ enum Flags
 {
 	Arguments	= 0x0001,
 	Ascii		= 0x0002,
-	NoCompact		= 0x0004,
+	NoCompact	= 0x0004,
 	Highlight	= 0x0008,
 	Vt100		= 0x0010,
 	ShowKernel	= 0x0020,
