@@ -55,6 +55,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
+#include <sys/utsname.h>
 #include <vis.h>
 
 #include "foreach.hpp"
@@ -185,9 +186,8 @@ enum Flags
 	ShowTitles	= 0x0200,
 	UidChanges	= 0x0400,
 	Unicode		= 0x0800,
-	Version		= 0x1000,
-	Pid			= 0x2000,
-	User		= 0x4000
+	Pid			= 0x1000,
+	User		= 0x2000
 };
 
 enum Escape { None, BoxDrawing, Bright };
@@ -967,7 +967,15 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 
 			break;
 		case 'V':
-			flags |= Version; break;
+			{
+				utsname name;
+
+				if (uname(&name))
+					err(1, NULL);
+
+				std::printf(DTPSTREE_PROGRAM " " DTPSTREE_VERSION " - %s %s %s\n", name.sysname, name.release, name.machine);
+				std::exit(0);
+			}
 		case 0:
 			{
 				std::string option(options[index].name);
@@ -1125,14 +1133,6 @@ int main(int argc, char *argv[])
 	pid_t hpid(0), pid(0);
 	char *user(NULL);
 	uint16_t flags(options(argc, argv, hpid, pid, user));
-
-	if (flags & Version)
-	{
-		std::printf(DTPSTREE_PROGRAM " " DTPSTREE_VERSION "\n");
-
-		return 0;
-	}
-
 	uid_t uid(0);
 
 	if (flags & User)
