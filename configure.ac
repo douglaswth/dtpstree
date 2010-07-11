@@ -63,19 +63,20 @@ AC_LANG([C++])
 AC_DEFUN([DT_MSG_TERMCAP], [AC_MSG_ERROR([You need terminfo or termcap])])
 AC_DEFUN([DT_CHECK_TERMCAP], [AC_CHECK_HEADERS([termcap.h])
 	AS_CASE([$ac_cv_header_termcap_h], [no], [DT_MSG_TERMCAP],
-		[AC_SEARCH_LIBS([tgetent], [termcap termlib])
-		AS_CASE([$ac_cv_search_tgetent], [no], [DT_MSG_TERMCAP])]
+		[AC_SEARCH_LIBS([tgetent], [termcap termlib], [], [DT_MSG_TERMCAP])]
 	)]
 )
 AC_CHECK_HEADERS([ncurses/curses.h curses.h], [break])
 AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_curses_h], [*yes*],
 	[AC_CHECK_HEADERS([ncurses/term.h term.h], [break])
 	AS_CASE([$ac_cv_header_term_h$ac_cv_header_ncurses_term_h], [*yes*],
-		[AC_SEARCH_LIBS([setupterm], [ncurses curses terminfo tinfo])
-		AS_CASE([$ac_cv_search_setupterm], [no],
+		[AC_SEARCH_LIBS([setupterm], [ncurses curses terminfo tinfo], [],
 			[DT_CHECK_TERMCAP]
 		)], [DT_CHECK_TERMCAP]
 	)], [DT_CHECK_TERMCAP]
 )
+AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
+AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
+AC_SEARCH_LIBS([kvm_openfiles], [kvm], [], [DT_MSG_KVM])
 AC_CONFIG_FILES([GNUmakefile])
 AC_OUTPUT
