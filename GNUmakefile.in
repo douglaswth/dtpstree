@@ -84,9 +84,9 @@ dist: man
 endif
 
 install: all
-	$(INSTALL) -dv $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
-	$(INSTALL_PROGRAM) -sv dtpstree $(DESTDIR)$(bindir)
-	$(INSTALL_DATA) -v $(srcdir)/man1/dtpstree.1 $(DESTDIR)$(man1dir)
+	$(INSTALL) -d $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
+	$(INSTALL_PROGRAM) -s dtpstree $(DESTDIR)$(bindir)
+	$(INSTALL_DATA) $(srcdir)/man1/dtpstree.1 $(DESTDIR)$(man1dir)
 
 uninstall:
 	rm -fv $(DESTDIR)$(bindir)/dtpstree

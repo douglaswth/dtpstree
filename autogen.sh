@@ -28,7 +28,7 @@ ac_dir=`aclocal --print-ac-dir`
 
 for ac_m4 in ${ac_m4s[@]}; do
 	if [[ $ac_dir/$ac_m4 -nt $ac_m4 ]]; then
-		install -m 644 -v $ac_dir/$ac_m4 $ac_m4
+		install -m 644 $ac_dir/$ac_m4 .
 		rm -fv aclocal.m4
 	fi
 done
