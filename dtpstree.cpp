@@ -38,11 +38,12 @@
 #include <libgen.h>
 #endif
 
-#ifdef __NetBSD__
-//#include <ncurses/curses.h>
-//#include <ncurses/term.h>
+#ifdef HAVE_TERMCAP_H
 #include <termcap.h>
-#else
+#elif defined(HAVE_NCURSES_TERM_H)
+#include <ncurses/curses.h>
+#include <ncurses/term.h>
+#elif defined(HAVE_TERM_H)
 #include <curses.h>
 #include <term.h>
 #endif
@@ -59,9 +60,6 @@
 #include <vis.h>
 
 #include "foreach.hpp"
-
-#define DTPSTREE_PROGRAM "dtpstree"
-#define DTPSTREE_VERSION "1.0.2"
 
 namespace kvm
 {
@@ -272,7 +270,7 @@ public:
 
 		if (!(flags & Long) && tty)
 		{
-#			ifndef __NetBSD__
+#			ifndef HAVE_TERMCAP_H
 			int code;
 
 			if (setupterm(NULL, 1, &code) == OK)
@@ -1141,7 +1139,7 @@ int main(int argc, char *argv[])
 
 	if (flags & Version)
 	{
-		std::printf(DTPSTREE_PROGRAM " " DTPSTREE_VERSION "\n");
+		std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION "\n");
 
 		return 0;
 	}
