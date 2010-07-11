@@ -20,7 +20,26 @@
 #  limitations under the License.
 
 set -e
+shopt -s extglob
+cd `dirname $0`
+
+ac_m4s=(check_gnu_make.m4)
+ac_dir=`aclocal --print-ac-dir`
+
+for ac_m4 in ${ac_m4s[@]}; do
+	if [[ $ac_dir/$ac_m4 -nt $ac_m4 ]]; then
+		install -m 644 -v $ac_dir/$ac_m4 $ac_m4
+		rm -fv aclocal.m4
+	fi
+done
+
 aclocal
-cat `aclocal --print-ac-dir`/check_gnu_make.m4 >> aclocal.m4
+
+for ac_m4 in ${ac_m4s[@]}; do
+	if ! grep -q "^# ${ac_m4//./\\.}$" aclocal.m4; then
+		echo -e "# $ac_m4\n$(<$ac_m4)" >> aclocal.m4
+	fi
+done
+
 automake -acf || true
 autoconf
