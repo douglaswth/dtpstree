@@ -82,7 +82,7 @@ inline uid_t ruid(Type *proc);
 template <typename Type>
 inline char *comm(Type *proc);
 
-#if !defined(__NetBSD__) && !defined(__OpenBSD__)
+#ifndef HAVE_KINFO_PROC2
 typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);

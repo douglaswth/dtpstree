@@ -78,5 +78,13 @@ AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_curses_h], [*yes*],
 AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
 AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
 AC_SEARCH_LIBS([kvm_openfiles], [kvm], [], [DT_MSG_KVM])
+AC_CHECK_TYPES([struct kinfo_proc2, struct kinfo_proc], [break], [],
+	[#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+AC_INCLUDES_DEFAULT]
+)
+AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL])
 AC_CONFIG_FILES([GNUmakefile])
 AC_OUTPUT
