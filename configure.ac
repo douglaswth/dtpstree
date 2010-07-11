@@ -78,13 +78,29 @@ AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_curses_h], [*yes*],
 AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
 AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
 AC_SEARCH_LIBS([kvm_openfiles], [kvm], [], [DT_MSG_KVM])
-AC_CHECK_TYPES([struct kinfo_proc2, struct kinfo_proc], [break], [],
-	[#include <kvm.h>
+AC_DEFUN([DT_INCLUDES_KVM], [#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
-AC_INCLUDES_DEFAULT]
+AC_INCLUDES_DEFAULT])
+AC_DEFUN([DT_CHECK_MEMBERS_KVM],
+	[m4_foreach_w([dt_member_suffix], [pid ppid ruid comm],
+		[AC_CHECK_MEMBER([struct ]$1[.]$2[_]dt_member_suffix, [], # TODO
+			[AC_CHECK_MEMBER([struct ]$1[.]$3[_]dt_member_suffix, [], # TODO
+				[DT_MSG_KVM], [DT_INCLUDES_KVM]
+			)], [DT_INCLUDES_KVM]
+		)]
+	)]
 )
-AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL])
+AC_CHECK_TYPE([struct kinfo_proc2],
+	[AC_DEFINE([HAVE_STRUCT_KINFO_PROC2])
+	DT_CHECK_MEMBERS_KVM([kinfo_proc2], [p], [ki])],
+	[AC_CHECK_TYPE([struct kinfo_proc],
+		[AC_DEFINE([HAVE_STRUCT_KINFO_PROC])
+		DT_CHECK_MEMBERS_KVM([kinfo_proc], [ki], [p])],
+		[DT_MSG_KVM], [DT_INCLUDES_KVM]
+	)], [DT_INCLUDES_KVM]
+)
+dnl AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL])
 AC_CONFIG_FILES([GNUmakefile])
 AC_OUTPUT

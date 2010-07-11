@@ -87,10 +87,6 @@ typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
 
-#ifndef KERN_PROC_PROC
-#define KERN_PROC_PROC KERN_PROC_ALL
-#endif
-
 template <>
 inline kinfo_proc *getprocs(kvm_t *kd, int &count)
 {
@@ -102,6 +98,23 @@ inline char **getargv(kvm_t *kd, const kinfo_proc *proc)
 {
 	return kvm_getargv(kd, proc, 0);
 }
+#else
+typedef kinfo_proc2 Proc;
+
+const int Flags(KVM_NO_FILES);
+
+template <>
+inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
+{
+	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
+}
+
+template <>
+inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
+{
+	return kvm_getargv2(kd, proc, 0);
+}
+#endif
 
 template <>
 inline pid_t pid(kinfo_proc *proc)
@@ -125,22 +138,6 @@ template <>
 inline char *comm(kinfo_proc *proc)
 {
 	return proc->ki_comm;
-}
-#else
-typedef kinfo_proc2 Proc;
-
-const int Flags(KVM_NO_FILES);
-
-template <>
-inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
-{
-	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
-}
-
-template <>
-inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
-{
-	return kvm_getargv2(kd, proc, 0);
 }
 
 template <>
@@ -166,7 +163,6 @@ inline char *comm(kinfo_proc2 *proc)
 {
 	return proc->p_comm;
 }
-#endif
 
 }
 
