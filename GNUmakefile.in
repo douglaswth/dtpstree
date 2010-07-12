@@ -73,7 +73,7 @@ ifneq ($(REALPATH),:)
 man: $(srcdir)/man1/dtpstree.1
 
 $(srcdir)/man1/%.1: % %.1.in
-	$(HELP2MAN) -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ $(shell $(REALPATH) $<)
+	$(HELP2MAN) -I $*.1.in -Nn '$(shell sed -e '$$ s|^// ||p;d' $<.cpp)' -o $@ -v -Vs $(shell $(REALPATH) $<)
 endif
 endif
 

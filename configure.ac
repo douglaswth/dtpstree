@@ -66,14 +66,23 @@ AC_DEFUN([DT_CHECK_TERMCAP], [AC_CHECK_HEADERS([termcap.h])
 		[AC_SEARCH_LIBS([tgetent], [termcap termlib], [], [DT_MSG_TERMCAP])]
 	)]
 )
-AC_CHECK_HEADERS([ncurses/curses.h curses.h], [break])
-AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_curses_h], [*yes*],
-	[AC_CHECK_HEADERS([ncurses/term.h term.h], [break])
-	AS_CASE([$ac_cv_header_term_h$ac_cv_header_ncurses_term_h], [*yes*],
-		[AC_SEARCH_LIBS([setupterm], [ncurses curses terminfo tinfo], [],
-			[DT_CHECK_TERMCAP]
+AC_DEFUN([DT_CHECK_TERMINFO],
+	[AC_CHECK_HEADERS([ncurses/ncurses.h curses.h],
+	[break])
+	AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_ncurses_h], [*yes*],
+		[AC_CHECK_HEADERS([ncurses/term.h term.h], [break])
+		AS_CASE([$ac_cv_header_term_h$ac_cv_header_ncurses_term_h], [*yes*],
+			[AC_SEARCH_LIBS([setupterm], [ncurses terminfo tinfo], [],
+				[DT_CHECK_TERMCAP]
+			)], [DT_CHECK_TERMCAP]
 		)], [DT_CHECK_TERMCAP]
-	)], [DT_CHECK_TERMCAP]
+	)]
+)
+AC_ARG_ENABLE([terminfo],
+	[AS_HELP_STRING([--disable-terminfo],
+		[do not try to use the terminfo interface]
+	)], [AS_CASE([$enableval], [no], [DT_CHECK_TERMCAP], [DT_CHECK_TERMINFO])],
+	[DT_CHECK_TERMINFO]
 )
 AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
 AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
@@ -85,8 +94,10 @@ AC_DEFUN([DT_INCLUDES_KVM], [#include <kvm.h>
 AC_INCLUDES_DEFAULT])
 AC_DEFUN([DT_CHECK_MEMBERS_KVM],
 	[m4_foreach_w([dt_member_suffix], [pid ppid ruid comm],
-		[AC_CHECK_MEMBER([struct ]$1[.]$2[_]dt_member_suffix, [], # TODO
-			[AC_CHECK_MEMBER([struct ]$1[.]$3[_]dt_member_suffix, [], # TODO
+		[AC_CHECK_MEMBER([struct ]$1[.]$2[_]dt_member_suffix,
+			[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($2)[_]m4_toupper(dt_member_suffix))],
+			[AC_CHECK_MEMBER([struct ]$1[.]$3[_]dt_member_suffix,
+				[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($4)[_]m4_toupper(dt_member_suffix))],
 				[DT_MSG_KVM], [DT_INCLUDES_KVM]
 			)], [DT_INCLUDES_KVM]
 		)]

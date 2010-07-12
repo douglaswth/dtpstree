@@ -41,7 +41,7 @@
 #ifdef HAVE_TERMCAP_H
 #include <termcap.h>
 #elif defined(HAVE_NCURSES_TERM_H)
-#include <ncurses/curses.h>
+#include <ncurses/ncurses.h>
 #include <ncurses/term.h>
 #elif defined(HAVE_TERM_H)
 #include <curses.h>
@@ -118,51 +118,43 @@ inline char **getargv(kvm_t *kd, const kinfo_proc2 *proc)
 #endif
 
 template <>
-inline pid_t pid(kinfo_proc *proc)
+inline pid_t pid(Proc *proc)
 {
+#	ifdef HAVE_STRUCT_KINFO_PROCX_KI_PID
 	return proc->ki_pid;
-}
-
-template <>
-inline pid_t ppid(kinfo_proc *proc)
-{
-	return proc->ki_ppid;
-}
-
-template <>
-inline uid_t ruid(kinfo_proc *proc)
-{
-	return proc->ki_ruid;
-}
-
-template <>
-inline char *comm(kinfo_proc *proc)
-{
-	return proc->ki_comm;
-}
-
-template <>
-inline pid_t pid(kinfo_proc2 *proc)
-{
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_P_PID)
 	return proc->p_pid;
+#	endif
 }
 
 template <>
-inline pid_t ppid(kinfo_proc2 *proc)
+inline pid_t ppid(Proc *proc)
 {
+#	ifdef HAVE_STRUCT_KINFO_PROCX_KI_PPID
+	return proc->ki_ppid;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_P_PPID)
 	return proc->p_ppid;
+#	endif
 }
 
 template <>
-inline uid_t ruid(kinfo_proc2 *proc)
+inline uid_t ruid(Proc *proc)
 {
+#	ifdef HAVE_STRUCT_KINFO_PROCX_KI_RUID
+	return proc->ki_ruid;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_P_RUID)
 	return proc->p_ruid;
+#	endif
 }
 
 template <>
-inline char *comm(kinfo_proc2 *proc)
+inline char *comm(Proc *proc)
 {
+#	ifdef HAVE_STRUCT_KINFO_PROCX_KI_COMM
+	return proc->ki_comm;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_P_COMM)
 	return proc->p_comm;
+#	endif
 }
 
 }
@@ -920,7 +912,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 		{ "show-titles", no_argument, NULL, 't' },
 		{ "uid-changes", no_argument, NULL, 'u' },
 		{ "unicode", no_argument, NULL, 'U' },
-		{ "version", no_argument, NULL, 'V' },
+		{ "version", optional_argument, NULL, 'V' },
 		{ "pid", required_argument, NULL, 0 },
 		{ "user", required_argument, NULL, 0 },
 		{ NULL, 0, NULL, 0 }
@@ -929,7 +921,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 	uint16_t flags(0);
 	char *program(argv[0]);
 
-	while ((option = getopt_long(argc, argv, "aAchH::GklnptuUV", options, &index)) != -1)
+	while ((option = getopt_long(argc, argv, "aAchH::GklnptuUV::", options, &index)) != -1)
 		switch (option)
 		{
 		case 'a':
@@ -975,12 +967,33 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 			break;
 		case 'V':
 			{
-				utsname name;
+				std::string version(optarg ?: "");
 
-				if (uname(&name))
-					err(1, NULL);
+				if (version == "s" || version == "short")
+					std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION "\n");
+				else
+				{
+					utsname name;
 
-				std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION " - %s %s %s\n", name.sysname, name.release, name.machine);
+					if (uname(&name))
+						err(1, NULL);
+
+					std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION " - %s %s %s\n", name.sysname, name.release, name.machine);
+				}
+
+				if (version == "l" || version == "license")
+					std::printf("\n"
+						"   Copyright 2010 Douglas Thrift\n\n"
+						"   Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+						"   you may not use this file except in compliance with the License.\n"
+						"   You may obtain a copy of the License at\n\n"
+						"       http://www.apache.org/licenses/LICENSE-2.0\n\n"
+						"   Unless required by applicable law or agreed to in writing, software\n"
+						"   distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+						"   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+						"   See the License for the specific language governing permissions and\n"
+						"   limitations under the License.\n");
+
 				std::exit(0);
 			}
 		case 0:
