@@ -84,6 +84,9 @@ AC_ARG_ENABLE([terminfo],
 	)], [AS_CASE([$enableval], [no], [DT_CHECK_TERMCAP], [DT_CHECK_TERMINFO])],
 	[DT_CHECK_TERMINFO]
 )
+AC_DEFUN([DT_MSG_BSD], [AC_MSG_ERROR([You need libbsd])])
+AC_CHECK_HEADER([vis.h], [], [DT_MSG_BSD])
+AC_SEARCH_LIBS([strvis], [bsd], [], [DT_MSG_BSD])
 AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
 AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
 AC_SEARCH_LIBS([kvm_openfiles], [kvm], [], [DT_MSG_KVM])
@@ -112,6 +115,9 @@ AC_CHECK_TYPE([struct kinfo_proc2],
 		[DT_MSG_KVM], [DT_INCLUDES_KVM]
 	)], [DT_INCLUDES_KVM]
 )
-dnl AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL])
+AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL], [], [], [DT_INCLUDES_KVM])
+AS_CASE([$ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL],
+	[*yes*], [], [DT_MSG_KVM]
+)
 AC_CONFIG_FILES([GNUmakefile])
 AC_OUTPUT

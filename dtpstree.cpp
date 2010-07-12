@@ -32,9 +32,7 @@
 #include <string>
 #include <vector>
 
-#ifdef __GLIBC__
-#include <bsd/stdlib.h>
-#else
+#ifndef __GLIBC__
 #include <libgen.h>
 #endif
 
@@ -65,6 +63,12 @@
 namespace kvm
 {
 
+#if HAVE_DECL_KERN_PROC_PROC
+const int All(KERN_PROC_PROC);
+#else
+const int All(KERN_PROC_ALL);
+#endif
+
 template <typename Type>
 inline Type *getprocs(kvm_t *kd, int &count);
 
@@ -91,7 +95,7 @@ const int Flags(O_RDONLY);
 template <>
 inline kinfo_proc *getprocs(kvm_t *kd, int &count)
 {
-	return kvm_getprocs(kd, KERN_PROC_PROC, 0, &count);
+	return kvm_getprocs(kd, All, 0, &count);
 }
 
 template <>
@@ -107,7 +111,7 @@ const int Flags(KVM_NO_FILES);
 template <>
 inline kinfo_proc2 *getprocs(kvm_t *kd, int &count)
 {
-	return kvm_getproc2(kd, KERN_PROC_ALL, 0, sizeof (kinfo_proc2), &count);
+	return kvm_getproc2(kd, All, 0, sizeof (kinfo_proc2), &count);
 }
 
 template <>

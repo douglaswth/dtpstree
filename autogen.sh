@@ -36,7 +36,7 @@ done
 aclocal
 
 for ac_m4 in ${ac_m4s[@]}; do
-	if ! grep -q "^# ${ac_m4//./\\.}$" aclocal.m4; then
+	if ! grep -qs "^# ${ac_m4//./\\.}$" aclocal.m4; then
 		echo -e "# $ac_m4\n$(<$ac_m4)" >> aclocal.m4
 	fi
 done
