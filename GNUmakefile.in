@@ -96,4 +96,4 @@ clean:
 	rm -fv dtpstree $(wildcard *core)
 
 distclean: clean
-	rm -fv GNUmakefile Makefile config.log config.status
+	rm -fv GNUmakefile config.log config.status makefile

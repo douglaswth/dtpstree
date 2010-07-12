@@ -23,8 +23,8 @@ AC_INIT([DT PS Tree], [1.0.2], [douglas@douglasthrift.net], [dtpstree], [http://
 AC_CONFIG_SRCDIR([dtpstree.cpp])
 AC_CONFIG_AUX_DIR([build-aux])
 CHECK_GNU_MAKE
-AC_SUBST([GMAKE], [$_cv_gnu_make_command])
-AS_IF([test "x$GMAKE" = x], [AC_MSG_ERROR([You need GNU make])])
+AC_SUBST([GNUMAKE], [$_cv_gnu_make_command])
+AS_IF([test "x$GNUMAKE" = x], [AC_MSG_ERROR([You need GNU make])])
 AC_PROG_INSTALL
 AC_PATH_PROG([HELP2MAN], [help2man], [:])
 AC_MSG_CHECKING([for realpath])
@@ -119,5 +119,6 @@ AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL], [], [], [DT_INCLUDES_KVM])
 AS_CASE([$ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL],
 	[*yes*], [], [DT_MSG_KVM]
 )
+AS_CASE([$GNUMAKE], [make], [], [AC_CONFIG_FILES([makefile])])
 AC_CONFIG_FILES([GNUmakefile])
 AC_OUTPUT

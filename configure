@@ -612,7 +612,7 @@ HELP2MAN
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
-GMAKE
+GNUMAKE
 ifGNUmake
 target_alias
 host_alias
@@ -2207,9 +2207,9 @@ $as_echo "\"Not found\"" >&6; };
         fi
 
 
-GMAKE=$_cv_gnu_make_command
+GNUMAKE=$_cv_gnu_make_command
 
-if test "x$GMAKE" = x; then :
+if test "x$GNUMAKE" = x; then :
   as_fn_error "You need GNU make" "$LINENO" 5
 fi
 # Find a good install program.  We prefer a C program (faster),
@@ -4520,6 +4520,13 @@ case $ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL in #(
     as_fn_error "You need libkvm" "$LINENO" 5
  ;;
 esac
+case $GNUMAKE in #(
+  make) :
+     ;; #(
+  *) :
+    ac_config_files="$ac_config_files makefile"
+ ;;
+esac
 ac_config_files="$ac_config_files GNUmakefile"
 
 cat >confcache <<\_ACEOF
@@ -5222,6 +5229,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "makefile") CONFIG_FILES="$CONFIG_FILES makefile" ;;
     "GNUmakefile") CONFIG_FILES="$CONFIG_FILES GNUmakefile" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
