@@ -4482,24 +4482,6 @@ fi
 
 fi
 
-ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_WAFFLE" "ac_cv_have_decl_KERN_PROC_WAFFLE" "#include <kvm.h>
-#include <sys/param.h>
-#include <sys/sysctl.h>
-#include <sys/user.h>
-$ac_includes_default
-"
-if test "x$ac_cv_have_decl_KERN_PROC_WAFFLE" = x""yes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_KERN_PROC_WAFFLE $ac_have_decl
-_ACEOF
-if test $ac_have_decl = 1; then :
-  break
-fi
 ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_PROC" "ac_cv_have_decl_KERN_PROC_PROC" "#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -4515,9 +4497,6 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_PROC $ac_have_decl
 _ACEOF
-if test $ac_have_decl = 1; then :
-  break
-fi
 ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_ALL" "ac_cv_have_decl_KERN_PROC_ALL" "#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -4533,10 +4512,14 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_ALL $ac_have_decl
 _ACEOF
-if test $ac_have_decl = 1; then :
-  break
-fi
 
+case $ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL in #(
+  *yes*) :
+     ;; #(
+  *) :
+    as_fn_error "You need libkvm" "$LINENO" 5
+ ;;
+esac
 ac_config_files="$ac_config_files GNUmakefile"
 
 cat >confcache <<\_ACEOF
