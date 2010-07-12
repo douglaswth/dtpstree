@@ -967,7 +967,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 			break;
 		case 'V':
 			{
-				std::string version(optarg ?: "");
+				std::string version(optarg ? optarg : "");
 
 				if (version == "s" || version == "short")
 					std::printf(PACKAGE_TARNAME " " PACKAGE_VERSION "\n");
