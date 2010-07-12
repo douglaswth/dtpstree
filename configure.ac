@@ -108,9 +108,13 @@ AC_DEFUN([DT_CHECK_MEMBERS_KVM],
 )
 AC_CHECK_TYPE([struct kinfo_proc2],
 	[AC_DEFINE([HAVE_STRUCT_KINFO_PROC2])
+	AC_CHECK_FUNC([kvm_getargv2], [], [DT_MSG_KVM])
+	AC_CHECK_FUNC([kvm_getproc2], [], [DT_MSG_KVM])
 	DT_CHECK_MEMBERS_KVM([kinfo_proc2], [p], [ki])],
 	[AC_CHECK_TYPE([struct kinfo_proc],
 		[AC_DEFINE([HAVE_STRUCT_KINFO_PROC])
+		AC_CHECK_FUNC([kvm_getargv], [], [DT_MSG_KVM])
+		AC_CHECK_FUNC([kvm_getprocs], [], [DT_MSG_KVM])
 		DT_CHECK_MEMBERS_KVM([kinfo_proc], [ki], [p])],
 		[DT_MSG_KVM], [DT_INCLUDES_KVM]
 	)], [DT_INCLUDES_KVM]
