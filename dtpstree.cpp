@@ -56,6 +56,7 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 #include <vis.h>
 
 #include "foreach.hpp"
@@ -65,6 +66,8 @@ namespace kvm
 
 #if HAVE_DECL_KERN_PROC_PROC
 const int All(KERN_PROC_PROC);
+#elif HAVE_DECL_KERN_PROC_KTHREAD
+const int All(KERN_PROC_KTHREAD);
 #else
 const int All(KERN_PROC_ALL);
 #endif
@@ -238,12 +241,24 @@ public:
 			verticalAndRight_ = L'\x251c';
 			downAndHorizontal_ = L'\x252c';
 
-			char *test;
+			wchar_t wides[] = { horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_ };
 
-			if (asprintf(&test, "%lc%lc%lc%lc%lc", horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_) == -1)
-				goto vt100;
+			for (int index(0); index != sizeof (wides) / sizeof (*wides); ++index)
+			{
+				char buffer[MB_CUR_MAX];
+				int size;
 
-			std::free(test);
+				if ((size = std::wctomb(buffer, wides[index])) == -1)
+					goto vt100;
+
+				wchar_t wide;
+
+				if (std::mbtowc(&wide, buffer, size) == -1)
+					goto vt100;
+
+				if (wide != wides[index])
+					goto vt100;
+			}
 		}
 		else if (flags & Vt100)
 		{
@@ -484,7 +499,14 @@ private:
 
 				std::mbstowcs(const_cast<wchar_t *>(wide.data()), string, wide.size());
 				std::free(string);
-				asprintf(&string, "%ls+", wide.c_str());
+
+				wide += L'+';
+
+				size_t size(std::wcstombs(NULL, wide.c_str(), 0) + 1);
+
+				string = static_cast<char *>(std::malloc(size));
+
+				std::wcstombs(string, wide.c_str(), size);
 
 				if (previous)
 				{

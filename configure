@@ -4582,6 +4582,7 @@ ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_PROC" "ac_cv_have_decl_KERN_PROC_PROC"
 #include <sys/sysctl.h>
 #include <sys/user.h>
 $ac_includes_default
+
 "
 if test "x$ac_cv_have_decl_KERN_PROC_PROC" = x""yes; then :
   ac_have_decl=1
@@ -4592,11 +4593,28 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_PROC $ac_have_decl
 _ACEOF
+ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_KTHREAD" "ac_cv_have_decl_KERN_PROC_KTHREAD" "#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_have_decl_KERN_PROC_KTHREAD" = x""yes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_KERN_PROC_KTHREAD $ac_have_decl
+_ACEOF
 ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_ALL" "ac_cv_have_decl_KERN_PROC_ALL" "#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
 $ac_includes_default
+
 "
 if test "x$ac_cv_have_decl_KERN_PROC_ALL" = x""yes; then :
   ac_have_decl=1
@@ -4608,7 +4626,7 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_ALL $ac_have_decl
 _ACEOF
 
-case $ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL in #(
+case $ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_KTHREAD$ac_cv_have_decl_KERN_PROC_ALL in #(
   *yes*) :
      ;; #(
   *) :

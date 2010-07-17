@@ -119,8 +119,10 @@ AC_CHECK_TYPE([struct kinfo_proc2],
 		[DT_MSG_KVM], [DT_INCLUDES_KVM]
 	)], [DT_INCLUDES_KVM]
 )
-AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_ALL], [], [], [DT_INCLUDES_KVM])
-AS_CASE([$ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_ALL],
+AC_CHECK_DECLS([KERN_PROC_PROC, KERN_PROC_KTHREAD, KERN_PROC_ALL], [], [],
+	[DT_INCLUDES_KVM]
+)
+AS_CASE([$ac_cv_have_decl_KERN_PROC_PROC$ac_cv_have_decl_KERN_PROC_KTHREAD$ac_cv_have_decl_KERN_PROC_ALL],
 	[*yes*], [], [DT_MSG_KVM]
 )
 AS_CASE([$GNUMAKE], [make], [], [AC_CONFIG_FILES([makefile])])

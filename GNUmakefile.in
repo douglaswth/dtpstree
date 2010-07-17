@@ -23,7 +23,7 @@ VPATH := @srcdir@
 srcdir := @srcdir@
 top_builddir := @top_builddir@
 
-CPPFLAGS := @CPPFLAGS@ $(filter -DPACKAGE_TARNAME% -DPACKAGE_VERSION% -DHAVE_NCURSES% -DHAVE_CURSES% -DHAVE_TERM% -DHAVE_STRUCT_KINFO_PROC% -DHAVE_DECL_KERN_PROC_PROC%,@DEFS@)
+CPPFLAGS := @CPPFLAGS@ $(filter -DPACKAGE_TARNAME% -DPACKAGE_VERSION% -DHAVE_NCURSES% -DHAVE_CURSES% -DHAVE_TERM% -DHAVE_STRUCT_KINFO_PROC% -DHAVE_DECL_KERN_PROC_PROC% -DHAVE_DECL_KERN_PROC_KTHREAD%,@DEFS@)
 CXX := @CXX@
 CXXFLAGS := @CXXFLAGS@ -Wall -Wno-long-long -Wno-parentheses
 LDFLAGS := @LDFLAGS@
@@ -89,11 +89,11 @@ install: all
 	$(INSTALL_DATA) $(srcdir)/man1/dtpstree.1 $(DESTDIR)$(man1dir)
 
 uninstall:
-	rm -fv $(DESTDIR)$(bindir)/dtpstree
-	rm -fv $(DESTDIR)$(man1dir)/dtpstree.1
+	rm -f $(DESTDIR)$(bindir)/dtpstree
+	rm -f $(DESTDIR)$(man1dir)/dtpstree.1
 
 clean:
-	rm -fv dtpstree $(wildcard *core)
+	rm -f dtpstree $(wildcard *core)
 
 distclean: clean
-	rm -fv GNUmakefile config.log config.status makefile
+	rm -f GNUmakefile config.log config.status makefile
