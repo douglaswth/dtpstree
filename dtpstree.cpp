@@ -27,7 +27,6 @@
 #include <cstring>
 #include <iostream>
 #include <map>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -129,6 +128,8 @@ inline pid_t pid(Proc *proc)
 {
 #	ifdef HAVE_STRUCT_KINFO_PROCX_KI_PID
 	return proc->ki_pid;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_KP_PID)
+	return proc->kp_pid;
 #	elif defined(HAVE_STRUCT_KINFO_PROCX_P_PID)
 	return proc->p_pid;
 #	endif
@@ -139,6 +140,8 @@ inline pid_t ppid(Proc *proc)
 {
 #	ifdef HAVE_STRUCT_KINFO_PROCX_KI_PPID
 	return proc->ki_ppid;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_KP_PPID)
+	return proc->kp_ppid;
 #	elif defined(HAVE_STRUCT_KINFO_PROCX_P_PPID)
 	return proc->p_ppid;
 #	endif
@@ -149,6 +152,8 @@ inline uid_t ruid(Proc *proc)
 {
 #	ifdef HAVE_STRUCT_KINFO_PROCX_KI_RUID
 	return proc->ki_ruid;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_KP_RUID)
+	return proc->kp_ruid;
 #	elif defined(HAVE_STRUCT_KINFO_PROCX_P_RUID)
 	return proc->p_ruid;
 #	endif
@@ -159,6 +164,8 @@ inline char *comm(Proc *proc)
 {
 #	ifdef HAVE_STRUCT_KINFO_PROCX_KI_COMM
 	return proc->ki_comm;
+#	elif defined(HAVE_STRUCT_KINFO_PROCX_KP_COMM)
+	return proc->kp_comm;
 #	elif defined(HAVE_STRUCT_KINFO_PROCX_P_COMM)
 	return proc->p_comm;
 #	endif
@@ -534,7 +541,7 @@ private:
 template <typename Type>
 struct Proc
 {
-	typedef std::map<pid_t, Proc<Type> *> PidMap;
+	typedef std::multimap<pid_t, Proc<Type> *> PidMap;
 	typedef std::multimap<std::string, Proc<Type> *> NameMap;
 
 private:
@@ -569,8 +576,8 @@ public:
 			return;
 
 		proc->parent_ = this;
-		childrenByPid_[proc->pid()] = proc;
 
+		childrenByPid_.insert(typename PidMap::value_type(proc->pid(), proc));
 		childrenByName_.insert(typename NameMap::value_type(proc->name(), proc));
 	}
 
@@ -1102,14 +1109,18 @@ static void tree(pid_t hpid, pid_t pid, uint16_t flags, uid_t uid)
 	typename Proc<Type>::PidMap pids;
 
 	_forall (Pointer, proc, procs, procs + count)
-		if (flags & ShowKernel || kvm::ppid(proc) != 0 || kvm::pid(proc) == 1)
-			pids[kvm::pid(proc)] = new Proc<Type>(flags, kd, proc);
+		if (flags & ShowKernel || kvm::ppid(proc) > 0 || kvm::pid(proc) == 1)
+			pids.insert(typename Proc<Type>::PidMap::value_type(kvm::pid(proc), new Proc<Type>(flags, kd, proc)));
 
 	enum { PidSort, NameSort } sort(flags & NumericSort ? PidSort : NameSort);
 
 	_tforeach (typename Proc<Type>::PidMap, pid, pids)
 	{
 		Proc<Type> *proc(pid->second);
+
+		if (proc->parent() == -1)
+			continue;
+
 		typename Proc<Type>::PidMap::iterator parent(pids.find(proc->parent()));
 
 		if (parent != pids.end())

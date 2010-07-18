@@ -594,6 +594,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+ac_header_list=
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 EGREP
@@ -2156,6 +2157,7 @@ $as_echo "$as_me: creating cache $cache_file" >&6;}
   >$cache_file
 fi
 
+as_fn_append ac_header_list " kinfo.h"
 # Check that the precious variables saved in the cache have kept the same
 # value.
 ac_cache_corrupted=false
@@ -4242,6 +4244,27 @@ else
 fi
 
 
+
+
+
+  for ac_header in $ac_header_list
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default
+"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing kvm_openfiles" >&5
 $as_echo_n "checking for library containing kvm_openfiles... " >&6; }
 if test "${ac_cv_search_kvm_openfiles+set}" = set; then :
@@ -4302,7 +4325,10 @@ fi
 
 
 
-ac_fn_cxx_check_type "$LINENO" "struct kinfo_proc2" "ac_cv_type_struct_kinfo_proc2" "#include <kvm.h>
+ac_fn_cxx_check_type "$LINENO" "struct kinfo_proc2" "ac_cv_type_struct_kinfo_proc2" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4326,7 +4352,10 @@ else
   as_fn_error "You need libkvm" "$LINENO" 5
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_pid" "ac_cv_member_struct_kinfo_proc2_p_pid" "#include <kvm.h>
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_pid" "ac_cv_member_struct_kinfo_proc2_p_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4337,7 +4366,10 @@ if test "x$ac_cv_member_struct_kinfo_proc2_p_pid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_PID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_pid" "ac_cv_member_struct_kinfo_proc2_ki_pid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_pid" "ac_cv_member_struct_kinfo_proc2_ki_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4345,7 +4377,21 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc2_ki_pid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__PID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_PID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "kp_pid" "ac_cv_member_struct_kinfo_proc2_kp_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc2_kp_pid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_PID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4353,7 +4399,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_ppid" "ac_cv_member_struct_kinfo_proc2_p_ppid" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_ppid" "ac_cv_member_struct_kinfo_proc2_p_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4364,7 +4415,10 @@ if test "x$ac_cv_member_struct_kinfo_proc2_p_ppid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_PPID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_ppid" "ac_cv_member_struct_kinfo_proc2_ki_ppid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_ppid" "ac_cv_member_struct_kinfo_proc2_ki_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4372,7 +4426,21 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc2_ki_ppid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__PPID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_PPID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "kp_ppid" "ac_cv_member_struct_kinfo_proc2_kp_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc2_kp_ppid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_PPID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4380,7 +4448,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_ruid" "ac_cv_member_struct_kinfo_proc2_p_ruid" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_ruid" "ac_cv_member_struct_kinfo_proc2_p_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4391,7 +4464,10 @@ if test "x$ac_cv_member_struct_kinfo_proc2_p_ruid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_RUID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_ruid" "ac_cv_member_struct_kinfo_proc2_ki_ruid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_ruid" "ac_cv_member_struct_kinfo_proc2_ki_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4399,7 +4475,21 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc2_ki_ruid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__RUID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_RUID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "kp_ruid" "ac_cv_member_struct_kinfo_proc2_kp_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc2_kp_ruid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_RUID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4407,7 +4497,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_comm" "ac_cv_member_struct_kinfo_proc2_p_comm" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "p_comm" "ac_cv_member_struct_kinfo_proc2_p_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4418,7 +4513,10 @@ if test "x$ac_cv_member_struct_kinfo_proc2_p_comm" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_COMM 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_comm" "ac_cv_member_struct_kinfo_proc2_ki_comm" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "ki_comm" "ac_cv_member_struct_kinfo_proc2_ki_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4426,7 +4524,21 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc2_ki_comm" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__COMM 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_COMM 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc2" "kp_comm" "ac_cv_member_struct_kinfo_proc2_kp_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc2_kp_comm" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_COMM 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4434,10 +4546,15 @@ fi
 
 fi
 
+fi
+
 
 
 else
-  ac_fn_cxx_check_type "$LINENO" "struct kinfo_proc" "ac_cv_type_struct_kinfo_proc" "#include <kvm.h>
+  ac_fn_cxx_check_type "$LINENO" "struct kinfo_proc" "ac_cv_type_struct_kinfo_proc" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4461,7 +4578,10 @@ else
   as_fn_error "You need libkvm" "$LINENO" 5
 fi
 
-		ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_pid" "ac_cv_member_struct_kinfo_proc_ki_pid" "#include <kvm.h>
+		ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_pid" "ac_cv_member_struct_kinfo_proc_ki_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4472,7 +4592,24 @@ if test "x$ac_cv_member_struct_kinfo_proc_ki_pid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_PID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_pid" "ac_cv_member_struct_kinfo_proc_p_pid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "kp_pid" "ac_cv_member_struct_kinfo_proc_kp_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc_kp_pid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_PID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_pid" "ac_cv_member_struct_kinfo_proc_p_pid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4480,7 +4617,7 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc_p_pid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__PID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_PID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4488,7 +4625,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_ppid" "ac_cv_member_struct_kinfo_proc_ki_ppid" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_ppid" "ac_cv_member_struct_kinfo_proc_ki_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4499,7 +4641,24 @@ if test "x$ac_cv_member_struct_kinfo_proc_ki_ppid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_PPID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_ppid" "ac_cv_member_struct_kinfo_proc_p_ppid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "kp_ppid" "ac_cv_member_struct_kinfo_proc_kp_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc_kp_ppid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_PPID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_ppid" "ac_cv_member_struct_kinfo_proc_p_ppid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4507,7 +4666,7 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc_p_ppid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__PPID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_PPID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4515,7 +4674,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_ruid" "ac_cv_member_struct_kinfo_proc_ki_ruid" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_ruid" "ac_cv_member_struct_kinfo_proc_ki_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4526,7 +4690,24 @@ if test "x$ac_cv_member_struct_kinfo_proc_ki_ruid" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_RUID 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_ruid" "ac_cv_member_struct_kinfo_proc_p_ruid" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "kp_ruid" "ac_cv_member_struct_kinfo_proc_kp_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc_kp_ruid" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_RUID 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_ruid" "ac_cv_member_struct_kinfo_proc_p_ruid" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4534,7 +4715,7 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc_p_ruid" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__RUID 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_RUID 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4542,7 +4723,12 @@ fi
 
 fi
 
-	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_comm" "ac_cv_member_struct_kinfo_proc_ki_comm" "#include <kvm.h>
+fi
+
+	ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "ki_comm" "ac_cv_member_struct_kinfo_proc_ki_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4553,7 +4739,24 @@ if test "x$ac_cv_member_struct_kinfo_proc_ki_comm" = x""yes; then :
   $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KI_COMM 1" >>confdefs.h
 
 else
-  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_comm" "ac_cv_member_struct_kinfo_proc_p_comm" "#include <kvm.h>
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "kp_comm" "ac_cv_member_struct_kinfo_proc_kp_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+
+"
+if test "x$ac_cv_member_struct_kinfo_proc_kp_comm" = x""yes; then :
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_KP_COMM 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_member "$LINENO" "struct kinfo_proc" "p_comm" "ac_cv_member_struct_kinfo_proc_p_comm" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4561,7 +4764,7 @@ $ac_includes_default
 
 "
 if test "x$ac_cv_member_struct_kinfo_proc_p_comm" = x""yes; then :
-  $as_echo "#define HAVE_STRUCT_KINFO_PROCX__COMM 1" >>confdefs.h
+  $as_echo "#define HAVE_STRUCT_KINFO_PROCX_P_COMM 1" >>confdefs.h
 
 else
   as_fn_error "You need libkvm" "$LINENO" 5
@@ -4569,6 +4772,8 @@ fi
 
 fi
 
+fi
+
 
 
 else
@@ -4577,7 +4782,10 @@ fi
 
 fi
 
-ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_PROC" "ac_cv_have_decl_KERN_PROC_PROC" "#include <kvm.h>
+ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_PROC" "ac_cv_have_decl_KERN_PROC_PROC" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4593,7 +4801,10 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_PROC $ac_have_decl
 _ACEOF
-ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_KTHREAD" "ac_cv_have_decl_KERN_PROC_KTHREAD" "#include <kvm.h>
+ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_KTHREAD" "ac_cv_have_decl_KERN_PROC_KTHREAD" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -4609,7 +4820,10 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_KERN_PROC_KTHREAD $ac_have_decl
 _ACEOF
-ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_ALL" "ac_cv_have_decl_KERN_PROC_ALL" "#include <kvm.h>
+ac_fn_cxx_check_decl "$LINENO" "KERN_PROC_ALL" "ac_cv_have_decl_KERN_PROC_ALL" "#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>

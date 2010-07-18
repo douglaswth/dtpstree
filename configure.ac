@@ -89,8 +89,12 @@ AC_CHECK_HEADER([vis.h], [], [DT_MSG_BSD])
 AC_SEARCH_LIBS([strvis], [bsd], [], [DT_MSG_BSD])
 AC_DEFUN([DT_MSG_KVM], [AC_MSG_ERROR([You need libkvm])])
 AC_CHECK_HEADER([kvm.h], [], [DT_MSG_KVM])
+AC_CHECK_HEADERS_ONCE([kinfo.h])
 AC_SEARCH_LIBS([kvm_openfiles], [kvm], [], [DT_MSG_KVM])
-AC_DEFUN([DT_INCLUDES_KVM], [#include <kvm.h>
+AC_DEFUN([DT_INCLUDES_KVM], [#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -100,8 +104,11 @@ AC_DEFUN([DT_CHECK_MEMBERS_KVM],
 		[AC_CHECK_MEMBER([struct ]$1[.]$2[_]dt_member_suffix,
 			[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($2)[_]m4_toupper(dt_member_suffix))],
 			[AC_CHECK_MEMBER([struct ]$1[.]$3[_]dt_member_suffix,
-				[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($4)[_]m4_toupper(dt_member_suffix))],
-				[DT_MSG_KVM], [DT_INCLUDES_KVM]
+				[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($3)[_]m4_toupper(dt_member_suffix))],
+				[AC_CHECK_MEMBER([struct ]$1[.]$4[_]dt_member_suffix,
+					[AC_DEFINE([HAVE_STRUCT_KINFO_PROCX_]m4_toupper($4)[_]m4_toupper(dt_member_suffix))],
+					[DT_MSG_KVM], [DT_INCLUDES_KVM]
+				)], [DT_INCLUDES_KVM]
 			)], [DT_INCLUDES_KVM]
 		)]
 	)]
@@ -110,12 +117,12 @@ AC_CHECK_TYPE([struct kinfo_proc2],
 	[AC_DEFINE([HAVE_STRUCT_KINFO_PROC2])
 	AC_CHECK_FUNC([kvm_getargv2], [], [DT_MSG_KVM])
 	AC_CHECK_FUNC([kvm_getproc2], [], [DT_MSG_KVM])
-	DT_CHECK_MEMBERS_KVM([kinfo_proc2], [p], [ki])],
+	DT_CHECK_MEMBERS_KVM([kinfo_proc2], [p], [ki], [kp])],
 	[AC_CHECK_TYPE([struct kinfo_proc],
 		[AC_DEFINE([HAVE_STRUCT_KINFO_PROC])
 		AC_CHECK_FUNC([kvm_getargv], [], [DT_MSG_KVM])
 		AC_CHECK_FUNC([kvm_getprocs], [], [DT_MSG_KVM])
-		DT_CHECK_MEMBERS_KVM([kinfo_proc], [ki], [p])],
+		DT_CHECK_MEMBERS_KVM([kinfo_proc], [ki], [kp], [p])],
 		[DT_MSG_KVM], [DT_INCLUDES_KVM]
 	)], [DT_INCLUDES_KVM]
 )
