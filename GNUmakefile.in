@@ -72,8 +72,8 @@ ifneq ($(HELP2MAN),:)
 ifneq ($(REALPATH),:)
 man: $(srcdir)/man1/dtpstree.1
 
-$(srcdir)/man1/%.1: % %.1.in
-	$(HELP2MAN) -I $(filter %.1.in,$^) -Nn '$(shell sed -e '$$ s|^// ||p;d' $(srcdir)/$<.cpp)' -o $@ -v -Vs $(shell $(REALPATH) $<)
+$(srcdir)/man1/%.1: % %.man
+	$(HELP2MAN) -I $(filter %.man,$^) -Nn '$(shell sed -e '$$ s|^// ||p;d' $(srcdir)/$<.cpp)' -o $@ -v -Vs $(shell $(REALPATH) $<)
 endif
 endif
 
