@@ -7,10 +7,10 @@ dtpstree \- display a tree of processes
 [\fIoptions\fR] [\fIPID|USER\fR]
 .SH DESCRIPTION
 .B dtpstree
-shows running processes as a tree. It is a reimplementation of \fBpstree\fR from
-\fIPSmisc\fR for FreeBSD, NetBSD, OpenBSD, and other modern BSD variants. It
-also works without \fI/proc\fR and will show the full set of processes in a jail
-even if \fBinit\fR is not present.
+shows running processes as a tree. It is a reimplementation of \fBpstree\fR
+from \fIPSmisc\fR for FreeBSD, NetBSD, OpenBSD, DragonFly BSD, and possibly
+other modern BSD variants. It also works without \fI/proc\fR and will show the
+full set of processes in a jail even if \fBinit\fR is not present.
 .SH OPTIONS
 .TP
 \fB\-a\fR, \fB\-\-arguments\fR
@@ -63,6 +63,8 @@ USER, \fB\-\-user\fR=\fIUSER\fR
 show only trees rooted at processes of USER
 .SH AUTHOR
 Written by \fBDouglas Thrift\fR <\fIdouglas@douglasthrift.net\fR>.
+.SH "REPORTING BUGS"
+Report bugs at <\fIhttp://code.douglasthrift.net/trac/dtpstree\fR>.
 .SH COPYRIGHT
 .PP
 Copyright 2010 Douglas Thrift
