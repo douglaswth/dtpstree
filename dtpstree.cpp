@@ -242,23 +242,34 @@ public:
 			downAndHorizontal_ = L'\x252c';
 
 			wchar_t wides[] = { horizontal_, vertical_, upAndRight_, verticalAndRight_, downAndHorizontal_ };
+			char *buffer = new char[MB_CUR_MAX];
 
 			for (int index(0); index != sizeof (wides) / sizeof (*wides); ++index)
 			{
-				char buffer[MB_CUR_MAX];
 				int size;
 
 				if ((size = std::wctomb(buffer, wides[index])) == -1)
+				{
+					delete [] buffer;
 					goto vt100;
+				}
 
 				wchar_t wide;
 
 				if (std::mbtowc(&wide, buffer, size) == -1)
+				{
+					delete [] buffer;
 					goto vt100;
+				}
 
 				if (wide != wides[index])
+				{
+					delete [] buffer;
 					goto vt100;
+				}
 			}
+
+			delete [] buffer;
 		}
 		else if (flags & Vt100)
 		{
