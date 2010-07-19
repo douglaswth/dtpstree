@@ -3469,7 +3469,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3501,13 +3501,14 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
 esac
  ;; #(
   *) :
-    for ac_header in ncurses/ncurses.h curses.h
+    for ac_header in curses.h ncurses/ncurses.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3523,7 +3524,7 @@ done
 
 	case $ac_cv_header_curses_h$ac_cv_header_ncurses_ncurses_h in #(
   *yes*) :
-    for ac_header in ncurses/term.h term.h
+    for ac_header in term.h ncurses/term.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3563,7 +3564,7 @@ return setupterm ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' ncurses terminfo tinfo; do
+for ac_lib in '' terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3634,7 +3635,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3666,6 +3667,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
@@ -3715,7 +3717,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3747,6 +3749,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
@@ -3795,7 +3798,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3827,6 +3830,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
@@ -3837,7 +3841,7 @@ esac
  ;;
 esac
 else
-  for ac_header in ncurses/ncurses.h curses.h
+  for ac_header in curses.h ncurses/ncurses.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3853,7 +3857,7 @@ done
 
 	case $ac_cv_header_curses_h$ac_cv_header_ncurses_ncurses_h in #(
   *yes*) :
-    for ac_header in ncurses/term.h term.h
+    for ac_header in term.h ncurses/term.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3893,7 +3897,7 @@ return setupterm ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' ncurses terminfo tinfo; do
+for ac_lib in '' terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3964,7 +3968,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -3996,6 +4000,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
@@ -4045,7 +4050,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -4077,6 +4082,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;
@@ -4125,7 +4131,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' termcap termlib; do
+for ac_lib in '' termcap termlib terminfo tinfo ncurses pdcurses curses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -4157,6 +4163,7 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
+
 fi
 
 	 ;;

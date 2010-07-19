@@ -63,17 +63,20 @@ AC_LANG([C++])
 AC_DEFUN([DT_MSG_TERMCAP], [AC_MSG_ERROR([You need terminfo or termcap])])
 AC_DEFUN([DT_CHECK_TERMCAP], [AC_CHECK_HEADERS([termcap.h])
 	AS_CASE([$ac_cv_header_termcap_h], [no], [DT_MSG_TERMCAP],
-		[AC_SEARCH_LIBS([tgetent], [termcap termlib], [], [DT_MSG_TERMCAP])]
+		[AC_SEARCH_LIBS([tgetent],
+			[termcap termlib terminfo tinfo ncurses pdcurses curses], [],
+			[DT_MSG_TERMCAP]
+		)]
 	)]
 )
 AC_DEFUN([DT_CHECK_TERMINFO],
-	[AC_CHECK_HEADERS([ncurses/ncurses.h curses.h],
+	[AC_CHECK_HEADERS([curses.h ncurses/ncurses.h],
 	[break])
 	AS_CASE([$ac_cv_header_curses_h$ac_cv_header_ncurses_ncurses_h], [*yes*],
-		[AC_CHECK_HEADERS([ncurses/term.h term.h], [break])
+		[AC_CHECK_HEADERS([term.h ncurses/term.h], [break])
 		AS_CASE([$ac_cv_header_term_h$ac_cv_header_ncurses_term_h], [*yes*],
-			[AC_SEARCH_LIBS([setupterm], [ncurses terminfo tinfo], [],
-				[DT_CHECK_TERMCAP]
+			[AC_SEARCH_LIBS([setupterm],
+				[terminfo tinfo ncurses pdcurses curses], [], [DT_CHECK_TERMCAP]
 			)], [DT_CHECK_TERMCAP]
 		)], [DT_CHECK_TERMCAP]
 	)]
