@@ -37,6 +37,8 @@
 
 #ifdef HAVE_TERMCAP_H
 #include <termcap.h>
+#elif defined(HAVE_NCURSES_TERMCAP_H)
+#include <ncurses/termcap.h>
 #elif defined(HAVE_NCURSES_TERM_H)
 #include <ncurses/ncurses.h>
 #include <ncurses/term.h>
@@ -295,7 +297,7 @@ public:
 
 		if (!(flags & Long) && tty)
 		{
-#			ifndef HAVE_TERMCAP_H
+#			if !defined(HAVE_TERMCAP_H) && !defined(HAVE_NCURSES_TERMCAP_H)
 			int code;
 
 			if (setupterm(NULL, 1, &code) == OK)

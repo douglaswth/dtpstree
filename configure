@@ -3429,22 +3429,22 @@ done
 if test "${enable_terminfo+set}" = set; then :
   enableval=$enable_terminfo; case $enableval in #(
   no) :
-    for ac_header in termcap.h
+    for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -3503,7 +3503,9 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
  ;; #(
@@ -3595,22 +3597,22 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  for ac_header in termcap.h
+  for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -3669,7 +3671,9 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
@@ -3677,22 +3681,22 @@ esac
 fi
  ;; #(
   *) :
-    for ac_header in termcap.h
+    for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -3751,29 +3755,31 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
 		 ;;
 esac ;; #(
   *) :
-    for ac_header in termcap.h
+    for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -3832,7 +3838,9 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
@@ -3928,22 +3936,22 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  for ac_header in termcap.h
+  for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -4002,7 +4010,9 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
@@ -4010,22 +4020,22 @@ esac
 fi
  ;; #(
   *) :
-    for ac_header in termcap.h
+    for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -4084,29 +4094,31 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
 		 ;;
 esac ;; #(
   *) :
-    for ac_header in termcap.h
+    for ac_header in termcap.h ncurses/termcap.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "termcap.h" "ac_cv_header_termcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_termcap_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_TERMCAP_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
 
-	case $ac_cv_header_termcap_h in #(
-  no) :
-    as_fn_error "You need terminfo or termcap" "$LINENO" 5 ;; #(
-  *) :
+	case $ac_cv_header_termcap_h$ac_cv_header_ncurses_termcap_h in #(
+  *yes*) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if test "${ac_cv_search_tgetent+set}" = set; then :
@@ -4165,7 +4177,9 @@ else
   as_fn_error "You need terminfo or termcap" "$LINENO" 5
 
 fi
-
+ ;; #(
+  *) :
+    as_fn_error "You need terminfo or termcap" "$LINENO" 5
 	 ;;
 esac
 
