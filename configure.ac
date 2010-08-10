@@ -19,7 +19,7 @@
 #  limitations under the License.
 
 AC_PREREQ([2.62])
-AC_INIT([DT PS Tree], [1.0.2], [douglas@douglasthrift.net], [dtpstree], [http://code.douglasthrift.net/trac/dtpstree])
+AC_INIT([DT PS Tree], [1.0.3], [douglas@douglasthrift.net], [dtpstree], [http://code.douglasthrift.net/trac/dtpstree])
 AC_CONFIG_SRCDIR([dtpstree.cpp])
 AC_CONFIG_AUX_DIR([build-aux])
 CHECK_GNU_MAKE
