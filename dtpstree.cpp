@@ -408,7 +408,16 @@ public:
 
 				ssize_t size(static_cast<ssize_t>(width) - 4);
 
-				asprintf(&string, " %s...", size > 0 ? arg.substr(0, size).c_str() : "");
+				if (size < -3)
+					return;
+				else if (size < 1)
+				{
+					string = static_cast<char *>(std::malloc(size += 5));
+
+					snprintf(string, size, " ...");
+				}
+				else
+					asprintf(&string, " %s...", arg.substr(0, size).c_str());
 			}
 			else
 				goto print;
