@@ -73,7 +73,7 @@ ifneq ($(REALPATH),:)
 man: $(srcdir)/man1/dtpstree.1
 
 $(srcdir)/man1/%.1: % %.man
-	$(HELP2MAN) -I $(filter %.man,$^) -Nn '$(shell sed -e '$$ s|^// ||p;d' $(srcdir)/$<.cpp)' -v -Vs $(shell $(REALPATH) $<) | sed -e 's/^\\fB\\-\([a-zA-Z]\)\([A-Z][A-Z]*\)\\fR/\\fB\\-\1\\fI\2\\fR/;s/^\\fB\\-\([a-zA-Z]\)\[\([A-Z][A-Z]*\)\]\\fR/\\fB\\-\1\\fR[\\fI\2\\fR]/' > $@
+	$(HELP2MAN) -I $(filter %.man,$^) -Nn '$(shell sed -e '$$ s|^// ||p;d' $(srcdir)/$<.cpp)' -v -Vs $(shell $(REALPATH) $<) | sed -e 's/^\\fB\\-\([a-zA-Z]\)\([A-Z][A-Z]*\)\\fR/\\fB\\-\1\\fI\2\\fR/;s/^\\fB\\-\([a-zA-Z]\)\[\([A-Z][A-Z]*\)\]\\fR/\\fB\\-\1\\fR[\\fI\2\\fR]/;s/^\([A-Z][A-Z]*\), \\fB\\-\\-/\\fI\1\\fR, \\fB\\-\\-/' > $@
 endif
 endif
 
