@@ -180,17 +180,19 @@ enum Flags
 	Arguments	= 0x0001,
 	Ascii		= 0x0002,
 	NoCompact	= 0x0004,
-	Highlight	= 0x0008,
+	Glob		= 0x0008,
 	Vt100		= 0x0010,
-	ShowKernel	= 0x0020,
-	Long		= 0x0040,
-	NumericSort	= 0x0080,
-	ShowPids	= 0x0100,
-	ShowTitles	= 0x0200,
-	UidChanges	= 0x0400,
-	Unicode		= 0x0800,
-	Pid			= 0x1000,
-	User		= 0x2000
+	Highlight	= 0x0020,
+	ShowKernel	= 0x0040,
+	Long		= 0x0080,
+	NumericSort	= 0x0100,
+	ShowPids	= 0x0200,
+	Regex		= 0x0400,
+	ShowTitles	= 0x0800,
+	UidChanges	= 0x1000,
+	Unicode		= 0x2000,
+	Pid			= 0x4000,
+	User		= 0x8000
 };
 
 enum Escape { None, BoxDrawing, Bright };
@@ -848,6 +850,9 @@ static void help(char *program, option options[], int code = 0)
 
 		switch (option->val)
 		{
+		case 'g':
+		case 'r':
+			arguments << '-' << static_cast<char>(option->val) << "PATTERN, --" << name << "=PATTERN"; break;
 		case 'H':
 			if (name != "highlight")
 				continue;
@@ -881,12 +886,14 @@ static void help(char *program, option options[], int code = 0)
 			description = "use ASCII line drawing characters"; break;
 		case 'c':
 			description = "don't compact identical subtrees"; break;
+		case 'g':
+			description = "show only trees rooted at processes with names\n                              that match the shell pattern PATTERN"; break;
+		case 'G':
+			description = "use VT100 line drawing characters"; break;
 		case 'h':
 			description = "show this help message and exit"; break;
 		case 'H':
 			description = "highlight the current process (or PID) and its\n                              ancestors"; break;
-		case 'G':
-			description = "use VT100 line drawing characters"; break;
 		case 'k':
 			description = "show kernel processes"; break;
 		case 'l':
@@ -895,6 +902,8 @@ static void help(char *program, option options[], int code = 0)
 			description = "sort output by PID"; break;
 		case 'p':
 			description = "show PIDs; implies -c"; break;
+		case 'r':
+			description = "show only trees rooted at processes with names\n                              that match the regular expression PATTERN"; break;
 		case 't':
 			description = "show process titles"; break;
 		case 'u':
@@ -948,22 +957,24 @@ static Type value(char *program, option options[], bool *success = NULL)
 	return value;
 }
 
-static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&user)
+static uint16_t options(int argc, char *argv[], char *&glob, pid_t &hpid, pid_t &pid, char *&regex, char *&user)
 {
 	option options[] = {
 		{ "arguments", no_argument, NULL, 'a' },
 		{ "ascii", no_argument, NULL, 'A' },
 		{ "compact", no_argument, NULL, 'c' },
 		{ "no-compact", no_argument, NULL, 'c' },
+		{ "glob", required_argument, NULL, 'g' },
+		{ "vt100", no_argument, NULL, 'G' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "highlight", optional_argument, NULL, 'H' },
 		{ "highlight-all", no_argument, NULL, 'H' },
 		{ "highlight-pid", required_argument, NULL, 'H' },
-		{ "vt100", no_argument, NULL, 'G' },
 		{ "show-kernel", no_argument, NULL, 'k' },
 		{ "long", no_argument, NULL, 'l' },
 		{ "numeric-sort", no_argument, NULL, 'n' },
 		{ "show-pids", no_argument, NULL, 'p' },
+		{ "regex", required_argument, NULL, 'r' },
 		{ "show-titles", no_argument, NULL, 't' },
 		{ "uid-changes", no_argument, NULL, 'u' },
 		{ "unicode", no_argument, NULL, 'U' },
@@ -976,30 +987,35 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 	uint16_t flags(0);
 	char *program(argv[0]);
 
-	while ((option = getopt_long(argc, argv, "aAchH::GklnptuUV::", options, &index)) != -1)
+	while ((option = getopt_long(argc, argv, "aAcg:GhH::klnpr:tuUV::", options, &index)) != -1)
 		switch (option)
 		{
 		case 'a':
 			flags |= Arguments | NoCompact; break;
 		case 'A':
 			flags |= Ascii;
-			flags &= ~Vt100;
-			flags &= ~Unicode;
+			flags &= ~Vt100 & ~Unicode;
 
 			break;
 		case 'c':
 			flags |= NoCompact; break;
+		case 'g':
+			std::free(glob);
+
+			glob = strdup(optarg);
+			flags |= Glob;
+			flags &= ~Pid & ~Regex & ~User;
+			break;
+		case 'G':
+			flags |= Vt100;
+			flags &= ~Ascii & ~Unicode;
+
+			break;
 		case 'h':
 			help(program, options);
 		case 'H':
 			hpid = optarg ? value<pid_t, 0, INT_MAX>(program, options) : getpid();
 			flags |= Highlight;
-
-			break;
-		case 'G':
-			flags |= Vt100;
-			flags &= ~Ascii;
-			flags &= ~Unicode;
 
 			break;
 		case 'k':
@@ -1010,14 +1026,21 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 			flags |= NumericSort; break;
 		case 'p':
 			flags |= NoCompact | ShowPids; break;
+		case 'r':
+			std::free(regex);
+
+			regex = strdup(optarg);
+			flags |= Regex;
+			flags &= ~Glob & ~Pid & ~User;
+
+			break;
 		case 't':
 			flags |= ShowTitles; break;
 		case 'u':
 			flags |= UidChanges; break;
 		case 'U':
 			flags |= Unicode;
-			flags &= ~Ascii;
-			flags &= ~Vt100;
+			flags &= ~Ascii & ~Vt100;
 
 			break;
 		case 'V':
@@ -1059,7 +1082,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 				{
 					pid = value<pid_t, 0, INT_MAX>(program, options);
 					flags |= Pid;
-					flags &= ~User;
+					flags &= ~Glob & ~Regex & ~User;
 				}
 				else if (option == "user")
 				{
@@ -1067,7 +1090,7 @@ static uint16_t options(int argc, char *argv[], pid_t &hpid, pid_t &pid, char *&
 
 					user = strdup(optarg);
 					flags |= User;
-					flags &= ~Pid;
+					flags &= ~Glob & ~Pid & ~Regex;
 				}
 			}
 
@@ -1209,10 +1232,13 @@ static void tree(pid_t hpid, pid_t pid, uint16_t flags, uid_t uid)
 
 int main(int argc, char *argv[])
 {
+	char *glob(NULL);
 	pid_t hpid(0), pid(0);
-	char *user(NULL);
-	uint16_t flags(options(argc, argv, hpid, pid, user));
+	char *regex(NULL), *user(NULL);
+	uint16_t flags(options(argc, argv, glob, hpid, pid, regex, user));
 	uid_t uid(0);
+
+	// TODO: glob and regex
 
 	if (flags & User)
 	{
