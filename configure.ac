@@ -22,7 +22,7 @@ AC_PREREQ([2.62])
 AC_INIT([DT PS Tree], [1.1.0], [douglas@douglasthrift.net], [dtpstree], [http://code.douglasthrift.net/trac/dtpstree])
 AC_CONFIG_SRCDIR([dtpstree.cpp])
 AC_CONFIG_AUX_DIR([build-aux])
-CHECK_GNU_MAKE
+AX_CHECK_GNU_MAKE
 AC_SUBST([GNUMAKE], [$_cv_gnu_make_command])
 AS_IF([test "x$GNUMAKE" = x], [AC_MSG_ERROR([You need GNU make])])
 AC_PROG_INSTALL
