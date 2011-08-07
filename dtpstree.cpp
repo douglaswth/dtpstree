@@ -904,6 +904,8 @@ static void help(char *program, option options[], int code = 0)
 			description = "show PIDs; implies -c"; break;
 		case 'r':
 			description = "show only trees rooted at processes with names\n                              that match the regular expression PATTERN"; break;
+		case 's':
+			description = "show parents of the selected process"; break;
 		case 't':
 			description = "show process titles"; break;
 		case 'u':
@@ -975,6 +977,7 @@ static uint16_t options(int argc, char *argv[], char *&glob, pid_t &hpid, pid_t 
 		{ "numeric-sort", no_argument, NULL, 'n' },
 		{ "show-pids", no_argument, NULL, 'p' },
 		{ "regex", required_argument, NULL, 'r' },
+		{ "show-parents", no_argument, NULL, 's' },
 		{ "show-titles", no_argument, NULL, 't' },
 		{ "uid-changes", no_argument, NULL, 'u' },
 		{ "unicode", no_argument, NULL, 'U' },
