@@ -92,6 +92,23 @@ template <typename Type>
 inline char *comm(Type *proc);
 
 #ifndef HAVE_STRUCT_KINFO_PROC2
+#ifdef HAVE_KINFO_NEWABI
+typedef kinfo_proc Proc;
+
+const int Flags(KVM_NO_FILES);
+
+template <>
+inline kinfo_proc *getprocs(kvm_t *kd, int &count)
+{
+	return kvm_getprocs(kd, All, 0, sizeof (kinfo_proc), &count);
+}
+
+template <>
+inline char **getargv(kvm_t *kd, const kinfo_proc *proc)
+{
+	return kvm_getargv(kd, proc, 0);
+}
+#else
 typedef kinfo_proc Proc;
 
 const int Flags(O_RDONLY);
@@ -107,6 +124,7 @@ inline char **getargv(kvm_t *kd, const kinfo_proc *proc)
 {
 	return kvm_getargv(kd, proc, 0);
 }
+#endif
 #else
 typedef kinfo_proc2 Proc;
 

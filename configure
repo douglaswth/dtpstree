@@ -675,8 +675,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CCC
-CXXCPP
-CPPFLAGS'
+CXXCPP'
 
 
 # Initialize some variables set by options.
@@ -4602,7 +4601,30 @@ fi
 
 		ac_fn_cxx_check_func "$LINENO" "kvm_getprocs" "ac_cv_func_kvm_getprocs"
 if test "x$ac_cv_func_kvm_getprocs" = xyes; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef HAVE_KINFO_H
+#include <kinfo.h>
+#endif
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+$ac_includes_default
+int
+main ()
+{
+kvm_getprocs(NULL, 0, 0, 0, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  $as_echo "#define HAVE_KINFO_NEWABI 1" >>confdefs.h
 
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 else
   as_fn_error $? "You need libkvm" "$LINENO" 5
 fi
