@@ -21,6 +21,7 @@
 
 #include <cerrno>
 #include <climits>
+#include <clocale>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
