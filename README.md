@@ -26,7 +26,7 @@ You can check out the code straight from the [Git repository]:
 git clone https://git.douglasthrift.net/douglas/dtpstree.git
 ```
 
-The code is also available on [Github] if you would like to make a pull request
+The code is also available on [GitHub] if you would like to make a pull request
 there.
 
 ### FreeBSD
@@ -139,6 +139,6 @@ Options:
 [dtpstree-1.0.3.tar.bz2]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.bz2
 [dtpstree-1.0.3.tar.xz]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.xz
 [Git repository]: https://git.douglasthrift.net/douglas/dtpstree
-[Github]: https://github.com/douglaswth/dtpstree
+[GitHub]: https://github.com/douglaswth/dtpstree
 [Debian GNU/kFreeBSD]: https://www.debian.org/ports/kfreebsd-gnu/
 [apt.douglasthrift.net]: https://apt.douglasthrift.net/
