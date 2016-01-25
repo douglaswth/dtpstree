@@ -7,6 +7,14 @@ the full set of processes in a jail even if `init` is not present.
 
 It is released under the [Apache License, Version 2.0].
 
+* [Download](#download)
+  * [FreeBSD](#freebsd)
+  * [pkgsrc (NetBSD)](#pkgsrc-netbsd)
+  * [NetBSD](#netbsd)
+  * [DragonFly BSD](#dragonfly-bsd)
+  * [Debian GNU/kFreeBSD](#debian-gnukfreebsd)
+* [Documentation](#documentation)
+
 ## Download
 
 * [dtpstree-1.0.3.tar.bz2] 50.5 kB
