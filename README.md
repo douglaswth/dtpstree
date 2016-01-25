@@ -20,6 +20,15 @@ It is released under the [Apache License, Version 2.0].
 * [dtpstree-1.0.3.tar.bz2] 50.5 kB
 * [dtpstree-1.0.3.tar.xz] 46.7 kB
 
+You can check out the code straight from the [Git repository]:
+
+```bash
+git clone https://git.douglasthrift.net/douglas/dtpstree.git
+```
+
+The code is also available on [Github] if you would like to make a pull request
+there.
+
 ### FreeBSD
 
 On FreeBSD, you can install it from the port
@@ -129,5 +138,7 @@ Options:
 [Apache License, Version 2.0]: https://www.apache.org/licenses/LICENSE-2.0
 [dtpstree-1.0.3.tar.bz2]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.bz2
 [dtpstree-1.0.3.tar.xz]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.xz
+[Git repository]: https://git.douglasthrift.net/douglas/dtpstree
+[Github]: https://github.com/douglaswth/dtpstree
 [Debian GNU/kFreeBSD]: https://www.debian.org/ports/kfreebsd-gnu/
 [apt.douglasthrift.net]: https://apt.douglasthrift.net/
