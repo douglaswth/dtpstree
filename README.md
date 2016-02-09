@@ -1,4 +1,4 @@
-# DT PS Tree
+# dtpstree
 
 `dtpstree` shows running processes as a tree. It is a reimplementation of
 `pstree` from [PSmisc] for [FreeBSD], [NetBSD], [OpenBSD], [DragonFly BSD], and
