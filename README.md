@@ -133,11 +133,11 @@ Options:
 [PSmisc]: http://psmisc.sourceforge.net/
 [FreeBSD]: https://www.freebsd.org/
 [NetBSD]: https://www.netbsd.org/
-[OpenBSD]: http://www.openbsd.org/
+[OpenBSD]: https://www.openbsd.org/
 [DragonFly BSD]: https://www.dragonflybsd.org/
 [Apache License, Version 2.0]: https://www.apache.org/licenses/LICENSE-2.0
-[dtpstree-1.0.3.tar.bz2]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.bz2
-[dtpstree-1.0.3.tar.xz]: http://code.douglasthrift.net/files/dtpstree/dtpstree-1.0.3.tar.xz
+[dtpstree-1.0.3.tar.bz2]: https://dl.douglasthrift.net/dtpstree/dtpstree-1.0.3.tar.bz2
+[dtpstree-1.0.3.tar.xz]: https://dl.douglasthrift.net/dtpstree/dtpstree-1.0.3.tar.xz
 [Git repository]: https://git.douglasthrift.net/douglas/dtpstree
 [GitHub]: https://github.com/douglaswth/dtpstree
 [Debian GNU/kFreeBSD]: https://www.debian.org/ports/kfreebsd-gnu/
