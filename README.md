@@ -130,7 +130,7 @@ Options:
   USER, --user=USER           show only trees rooted at processes of USER
 ```
 
-[PSmisc]: http://psmisc.sourceforge.net/
+[PSmisc]: https://psmisc.sourceforge.net/
 [FreeBSD]: https://www.freebsd.org/
 [NetBSD]: https://www.netbsd.org/
 [OpenBSD]: https://www.openbsd.org/
